@@ -1,0 +1,5 @@
+{
+  "name": "Dungeon of the Basilisk",
+  "description": "A dynamic 1-6 player turn-based strategy game with multilingual support (PL, EN, UA, RU). Players race from the edges to the center hub, facing dungeon challenges.",
+  "requestFramePermissions": []
+}

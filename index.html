@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dungeon of the Basilisk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* 
+         NOTE: For a completely offline version, download tailwindcss.js 
+         and the react libraries locally and update the src attributes.
+      */
+      
+      body {
+        /* Fallback to system sans-serif fonts */
+        font-family: 'Times New Roman', Times, serif; /* VN style serif */
+        background-color: #0c0a09; /* Stone 950 */
+        color: #e7e5e4; /* Stone 200 */
+        overflow: hidden; /* Prevent body scroll, handle in app */
+      }
+      
+      h1, h2, h3, h4, .dungeon-font {
+        /* Fallback to system fantasy/serif fonts */
+        font-family: 'MedievalSharp', 'Luminari', 'Chalkduster', 'Fantasy', serif;
+      }
+
+      /* Custom scrollbar for game logs */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.3);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #78350f; /* Amber 900 */
+        border-radius: 3px;
+      }
+
+      /* --- 3D DICE STYLES --- */
+      .dice-scene {
+        perspective: 600px;
+      }
+
+      .dice {
+        width: 80px;
+        height: 80px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 1s cubic-bezier(0.1, 0.9, 0.2, 1.2); /* Bouncy finish */
+      }
+
+      .dice.rolling {
+        animation: spin 0.5s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+        100% { transform: rotateX(360deg) rotateY(720deg) rotateZ(360deg); }
+      }
+
+      .dice-face {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        background: #292524; /* Stone 800 */
+        border: 2px solid #a8a29e; /* Stone 400 */
+        box-shadow: inset 0 0 10px #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 40px;
+        backface-visibility: hidden;
+        border-radius: 8px;
+      }
+
+      /* Face positions */
+      .face-front  { transform: rotateY(0deg) translateZ(40px); }
+      .face-back   { transform: rotateY(180deg) translateZ(40px); }
+      .face-right  { transform: rotateY(90deg) translateZ(40px); }
+      .face-left   { transform: rotateY(-90deg) translateZ(40px); }
+      .face-top    { transform: rotateX(90deg) translateZ(40px); }
+      .face-bottom { transform: rotateX(-90deg) translateZ(40px); }
+
+      /* --- VISUAL NOVEL STYLES --- */
+      .vn-panel {
+        background: linear-gradient(180deg, rgba(28, 25, 23, 0.95) 0%, rgba(12, 10, 9, 0.98) 100%);
+        box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+        border-left: 1px solid rgba(120, 53, 15, 0.3);
+      }
+
+      .vn-dialogue-box {
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid #78350f; /* Amber 900 */
+        border-radius: 4px;
+        position: relative;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.8);
+      }
+      
+      .vn-dialogue-box::before {
+        content: '';
+        position: absolute;
+        inset: 2px;
+        border: 1px solid rgba(251, 191, 36, 0.2); /* Amber 400 low opacity */
+        pointer-events: none;
+      }
+
+      .vn-name-tag {
+        background: linear-gradient(90deg, #78350f 0%, #451a03 100%);
+        color: #fef3c7;
+        padding: 4px 16px;
+        border: 1px solid #b45309;
+        font-family: 'MedievalSharp', serif;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        transform: skewX(-10deg);
+        display: inline-block;
+      }
+
+      .vn-button {
+        background: linear-gradient(to bottom, #44403c, #292524);
+        border: 1px solid #78350f;
+        color: #d6d3d1;
+        font-family: 'MedievalSharp', serif;
+        transition: all 0.2s;
+        text-shadow: 0 1px 2px black;
+      }
+
+      .vn-button:hover:not(:disabled) {
+        background: linear-gradient(to bottom, #57534e, #44403c);
+        border-color: #f59e0b;
+        color: #fef3c7;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      }
+
+      .vn-button:active:not(:disabled) {
+        transform: translateY(1px);
+        box-shadow: none;
+      }
+
+      .vn-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        filter: grayscale(1);
+      }
+      
+      .vn-choice {
+        background: rgba(28, 25, 23, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+      }
+      
+      .vn-choice:hover {
+        background: rgba(120, 53, 15, 0.4);
+        border-color: #f59e0b;
+        padding-left: 1.5rem;
+      }
+
+      .scanlines {
+        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+        background-size: 100% 4px;
+        pointer-events: none;
+      }
+
+      @keyframes shiver {
+        0% { transform: translate(0, 0); }
+        25% { transform: translate(0.5px, 0.5px) rotate(1deg); }
+        50% { transform: translate(-0.5px, -0.5px) rotate(-1deg); }
+        75% { transform: translate(0.5px, -0.5px) rotate(0deg); }
+        100% { transform: translate(0, 0); }
+      }
+      
+      .shiver {
+        animation: shiver 0.2s infinite;
+      }
+
+    </style>
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
