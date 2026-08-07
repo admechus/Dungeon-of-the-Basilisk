@@ -129,6 +129,54 @@ describe('question Excel rows', () => {
     }, 2).question?.options).toEqual(['A', 'B', 'C', 'D']);
   });
 
+  it('rejects leading gaps before option columns', () => {
+    const result = excelRowToQuestionCandidate({
+      id: 'leading-gap',
+      language: Language.EN,
+      question: 'Pick one',
+      option1: '',
+      option2: 'A',
+      option3: 'B',
+      correct: 2,
+      enabled: true,
+    }, 2);
+
+    expect(result.question).toBeNull();
+    expect(result.errors).toContain('option2 is filled after an empty option column.');
+    expect(result.errors).toContain('option3 is filled after an empty option column.');
+  });
+
+  it('rejects middle gaps between option columns without shifting correct semantics', () => {
+    const result = excelRowToQuestionCandidate({
+      id: 'option-gap',
+      language: Language.EN,
+      question: 'Pick one',
+      option1: 'A',
+      option2: '',
+      option3: 'B',
+      correct: 2,
+      enabled: true,
+    }, 2);
+
+    expect(result.question).toBeNull();
+    expect(result.errors).toContain('option3 is filled after an empty option column.');
+    expect(result.errors).toContain('correct=2 but only 1 answers exist.');
+  });
+
+  it('allows trailing empty option columns', () => {
+    expect(excelRowToQuestionCandidate({
+      id: 'trailing-gap',
+      language: Language.EN,
+      question: 'Pick one',
+      option1: 'A',
+      option2: 'B',
+      option3: '',
+      option4: '',
+      correct: 2,
+      enabled: true,
+    }, 2).question?.options).toEqual(['A', 'B']);
+  });
+
   it('rejects gaps between option columns', () => {
     expect(excelRowToQuestionCandidate({
       id: 'option-gap',
@@ -294,6 +342,20 @@ describe('question Excel workbooks', () => {
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([['Only reference']]), 'Reference');
 
     expect(parseQuestionWorkbook(workbook).problems[0].message).toBe('Questions sheet not found.');
+  });
+
+  it('counts one invalid row once even when it has multiple problems', () => {
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      ['id', 'language', 'subject', 'question', 'option1', 'option2', 'option3', 'correct', 'enabled'],
+      ['bad-row', 'Deutsch', 'biology', '', '', 'A', 'B', 4, 'maybe'],
+    ]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Questions');
+    const parsed = parseQuestionWorkbook(workbook);
+
+    expect(parsed.summary.invalidCount).toBe(1);
+    expect(parsed.problems.length).toBeGreaterThan(1);
+    expect(parsed.problems.every((problem) => problem.rowNumber === 2)).toBe(true);
   });
 
   it('accepts missing optional columns', () => {

@@ -118,25 +118,20 @@ const parseEnabled = (value: unknown): boolean | null => {
 
 const parseOptions = (row: ExcelQuestionRow): { options: string[]; errors: string[] } => {
   const optionValues = [row.option1, row.option2, row.option3, row.option4].map(getCellText);
-  const options: string[] = [];
   const errors: string[] = [];
-  let hasGap = false;
+  const firstEmptyIndex = optionValues.findIndex((option) => !option);
+  const optionLimit = firstEmptyIndex === -1 ? optionValues.length : firstEmptyIndex;
 
   optionValues.forEach((option, index) => {
-    if (!option) {
-      if (options.length > 0) hasGap = true;
-      return;
-    }
-
-    if (hasGap) {
+    if (index > optionLimit && option) {
       errors.push(`option${index + 1} is filled after an empty option column.`);
-      return;
     }
-
-    options.push(option);
   });
 
-  return { options, errors };
+  return {
+    options: optionValues.slice(0, optionLimit),
+    errors,
+  };
 };
 
 const getOptionImageIds = (row: ExcelQuestionRow, optionCount: number): Array<string | null> | undefined => {
@@ -262,6 +257,7 @@ export const parseQuestionWorkbook = (
   const validQuestions: EditableQuestion[] = [];
   const problems: ExcelImportProblem[] = [];
   let generatedIdCount = 0;
+  let invalidRowCount = 0;
 
   rows.forEach((row, index) => {
     const rowNumber = rowNumbers[index];
@@ -271,6 +267,7 @@ export const parseQuestionWorkbook = (
     if (result.question) {
       validQuestions.push(result.question);
     } else {
+      invalidRowCount += 1;
       result.errors.forEach((message) => {
         problems.push({
           rowNumber,
@@ -287,7 +284,7 @@ export const parseQuestionWorkbook = (
     summary: {
       totalRows: rows.length,
       validCount: validQuestions.length,
-      invalidCount: problems.length,
+      invalidCount: invalidRowCount,
       generatedIdCount,
     },
     validQuestions,

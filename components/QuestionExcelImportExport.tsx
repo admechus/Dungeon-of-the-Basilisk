@@ -29,6 +29,32 @@ const downloadWorkbook = (arrayBuffer: ArrayBuffer, filename: string) => {
   URL.revokeObjectURL(url);
 };
 
+const getPreviewStatusText = (
+  preview: ExcelPreviewResult,
+  language: Language,
+  text: TeacherEditorText
+): string => {
+  const workbookProblem = preview.problems.find((problem) => problem.rowNumber === 0);
+  if (workbookProblem) return localizeTeacherEditorMessage(workbookProblem.message, language);
+  if (preview.summary.invalidCount > 0) {
+    return `${text.invalid}: ${preview.summary.invalidCount}. ${text.valid}: ${preview.summary.validCount}.`;
+  }
+  if (preview.validQuestions.length === 0) return text.invalidWorkbook;
+  return text.excelImportReady;
+};
+
+const getPreviewReadinessText = (
+  preview: ExcelPreviewResult,
+  language: Language,
+  text: TeacherEditorText
+): string => {
+  const workbookProblem = preview.problems.find((problem) => problem.rowNumber === 0);
+  if (workbookProblem) return localizeTeacherEditorMessage(workbookProblem.message, language);
+  if (preview.summary.invalidCount > 0) return `${text.invalid}: ${preview.summary.invalidCount}`;
+  if (preview.validQuestions.length === 0) return text.invalidWorkbook;
+  return text.readyToImport;
+};
+
 const QuestionExcelImportExport: React.FC<QuestionExcelImportExportProps> = ({
   questions,
   language,
@@ -64,13 +90,13 @@ const QuestionExcelImportExport: React.FC<QuestionExcelImportExportProps> = ({
         ...result,
         conflictCount: mergeResult.conflictCount,
       });
-      setStatusText(text.excelImportReady);
+      setStatusText(getPreviewStatusText({ ...result, conflictCount: mergeResult.conflictCount }, language, text));
     } catch {
       setPreview({
         isValid: false,
         summary: { totalRows: 0, validCount: 0, invalidCount: 0, generatedIdCount: 0 },
         validQuestions: [],
-        problems: [{ rowNumber: 0, message: text.invalidWorkbook }],
+        problems: [{ rowNumber: 0, message: 'Invalid workbook.' }],
         conflictCount: 0,
       });
       setStatusText(text.invalidWorkbook);
@@ -134,7 +160,7 @@ const QuestionExcelImportExport: React.FC<QuestionExcelImportExportProps> = ({
             <p>{text.invalid}: {preview.summary.invalidCount}</p>
             <p>{text.conflicts}: {preview.conflictCount}</p>
             <p>{text.generatedIds}: {preview.summary.generatedIdCount}</p>
-            <p>{preview.validQuestions.length > 0 ? text.readyToImport : text.invalidWorkbook}</p>
+            <p>{getPreviewReadinessText(preview, language, text)}</p>
           </div>
           {preview.summary.generatedIdCount > 0 && (
             <p className="text-xs text-stone-500 mb-3">{text.excelGeneratedIdsHint}</p>
