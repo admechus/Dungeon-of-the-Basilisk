@@ -1,5 +1,6 @@
 import { EditableQuestion, Language, QuestionDifficulty } from './types';
 import { isQuestionSubject } from './questionSubjects';
+import { isSupportedGrade } from './grades';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -71,8 +72,8 @@ export const validateQuestion = (
     errors.push('Correct answer must point to an existing option.');
   }
 
-  if (question.grade !== undefined && (!Number.isInteger(question.grade) || question.grade <= 0)) {
-    errors.push('Grade must be a positive integer.');
+  if (question.grade !== undefined && !isSupportedGrade(question.grade)) {
+    errors.push('Grade must be 1, 2, 3, or 4.');
   }
 
   if (question.difficulty !== undefined && !SUPPORTED_DIFFICULTIES.includes(question.difficulty)) {

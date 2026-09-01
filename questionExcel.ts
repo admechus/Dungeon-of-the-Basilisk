@@ -3,6 +3,7 @@ import { mergeQuestionBanks } from './questionBank';
 import { QUESTION_SUBJECT_LABELS, QUESTION_SUBJECTS, isQuestionSubject } from './questionSubjects';
 import { normalizeQuestion, validateQuestion, isSupportedLanguage } from './questionValidation';
 import { EditableQuestion, Language, QuestionDifficulty } from './types';
+import { isSupportedGrade, SUPPORTED_GRADES } from './grades';
 
 export const QUESTIONS_SHEET_NAME = 'Questions';
 export const REFERENCE_SHEET_NAME = 'Reference';
@@ -164,7 +165,7 @@ export const excelRowToQuestionCandidate = (
 
   if (!isSupportedLanguage(language)) errors.push(`Unsupported language: ${language || '(empty)'}.`);
   if (subject !== undefined && !isQuestionSubject(subject)) errors.push(`Unsupported subject: ${subject}.`);
-  if (grade !== undefined && !Number.isInteger(grade)) errors.push(`Unsupported grade: ${getCellText(row.grade)}.`);
+  if (grade !== undefined && !isSupportedGrade(grade)) errors.push(`Unsupported grade: ${getCellText(row.grade)}.`);
   if (difficulty !== undefined && difficulty !== 1 && difficulty !== 2 && difficulty !== 3) {
     errors.push(`Unsupported difficulty: ${getCellText(row.difficulty)}.`);
   }
@@ -189,7 +190,7 @@ export const excelRowToQuestionCandidate = (
   if (subject !== undefined && isQuestionSubject(subject)) question.subject = subject;
   const topic = getOptionalText(row.topic);
   if (topic !== undefined) question.topic = topic;
-  if (grade !== undefined && Number.isInteger(grade)) question.grade = grade;
+  if (grade !== undefined && isSupportedGrade(grade)) question.grade = grade;
   if (difficulty === 1 || difficulty === 2 || difficulty === 3) question.difficulty = difficulty as QuestionDifficulty;
   const explanation = getOptionalText(row.explanation);
   if (explanation !== undefined) question.explanation = explanation;
@@ -326,6 +327,10 @@ const createReferenceWorksheet = (): XLSX.WorkSheet => {
     [1],
     [2],
     [3],
+    [],
+    ['Grade'],
+    ...SUPPORTED_GRADES.map((grade) => [grade]),
+    ['empty = general question'],
     [],
     ['Enabled'],
     ['TRUE'],

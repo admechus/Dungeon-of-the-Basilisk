@@ -276,6 +276,37 @@ describe('question Excel rows', () => {
     }, 2).errors).toContain('Unsupported subject: biology.');
   });
 
+  it('rejects grades outside supported player grades', () => {
+    const result = excelRowToQuestionCandidate({
+      id: 'invalid-grade',
+      language: Language.EN,
+      grade: 5,
+      question: 'Pick one',
+      option1: 'A',
+      option2: 'B',
+      correct: 1,
+      enabled: true,
+    }, 2);
+
+    expect(result.question).toBeNull();
+    expect(result.errors).toContain('Unsupported grade: 5.');
+  });
+
+  it('keeps an empty Excel grade as a general question', () => {
+    const result = excelRowToQuestionCandidate({
+      id: 'general-grade',
+      language: Language.EN,
+      grade: '',
+      question: 'Pick one',
+      option1: 'A',
+      option2: 'B',
+      correct: 1,
+      enabled: true,
+    }, 2);
+
+    expect(result.question?.grade).toBeUndefined();
+  });
+
   it('generates an id for empty id cells', () => {
     const result = excelRowToQuestionCandidate({
       language: Language.EN,

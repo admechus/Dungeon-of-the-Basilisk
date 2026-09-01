@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { createQuestionBankExport, mergeQuestionBanks, parseQuestionBankJson, pickQuestionFromBank, validateQuestionBankImport } from './questionBank';
+import {
+  createQuestionBankExport,
+  getQuestionCandidatesForPlayerGrade,
+  mergeQuestionBanks,
+  parseQuestionBankJson,
+  pickDoorQuestion,
+  pickQuestionFromBank,
+  validateQuestionBankImport,
+} from './questionBank';
 import { filterQuestionsForTeacher, getQuestionSubjectLabel, QUESTION_SUBJECTS } from './questionSubjects';
 import { loadQuestionBank, QuestionStorage, saveQuestionBank } from './questionStorage';
 import { normalizeOptionImageIds, normalizeQuestion, validateQuestion } from './questionValidation';
 import { EditableQuestion, Language, QuizQuestion } from './types';
+import { SUPPORTED_GRADES } from './grades';
 
 const createQuestion = (overrides: Partial<EditableQuestion> = {}): EditableQuestion => ({
   id: 'q-1',
@@ -90,6 +99,12 @@ describe('validateQuestion', () => {
     expect(result.isValid).toBe(false);
   });
 
+  it('rejects a grade outside supported setup grades', () => {
+    const result = validateQuestion(createQuestion({ grade: 5 }));
+
+    expect(result.isValid).toBe(false);
+  });
+
   it('accepts an old question without image fields', () => {
     expect(validateQuestion(createQuestion()).isValid).toBe(true);
   });
@@ -149,6 +164,10 @@ describe('validateQuestion', () => {
 
   it('accepts a legacy question without subject', () => {
     expect(validateQuestion(createQuestion({ subject: undefined })).isValid).toBe(true);
+  });
+
+  it('accepts a legacy question without grade', () => {
+    expect(validateQuestion(createQuestion({ grade: undefined })).isValid).toBe(true);
   });
 
   it('rejects an unsupported subject value', () => {
@@ -234,6 +253,14 @@ describe('question bank import and merge', () => {
     expect(result.validQuestions[0].subject).toBe('mathematics');
   });
 
+  it('imports a legacy JSON question without grade as a general question', () => {
+    const payload = createQuestionBankExport([createQuestion({ grade: undefined })]);
+    const result = parseQuestionBankJson(JSON.stringify(payload));
+
+    expect(result.validQuestions[0].grade).toBeUndefined();
+    expect(result.isValid).toBe(true);
+  });
+
   it('rejects unsupported subject during import', () => {
     const payload = createQuestionBankExport([createQuestion()]);
     const result = validateQuestionBankImport({
@@ -266,6 +293,125 @@ describe('question bank storage and selection', () => {
     );
 
     expect(question.question[Language.EN]).toBe('Fallback EN');
+  });
+
+  it('selects a grade 1 question for a grade 1 player', () => {
+    const question = pickQuestionFromBank(
+      [createQuestion({ id: 'grade-1', grade: 1, question: 'Grade 1' })],
+      Language.EN,
+      [fallbackQuestion],
+      1,
+      () => 0
+    );
+
+    expect(question.question[Language.EN]).toBe('Grade 1');
+  });
+
+  it('selects a grade 2 question for a grade 2 player', () => {
+    const question = pickQuestionFromBank(
+      [createQuestion({ id: 'grade-2', grade: 2, question: 'Grade 2' })],
+      Language.EN,
+      [fallbackQuestion],
+      2,
+      () => 0
+    );
+
+    expect(question.question[Language.EN]).toBe('Grade 2');
+  });
+
+  it('does not select a grade 2 question for a grade 4 player', () => {
+    const question = pickQuestionFromBank(
+      [createQuestion({ id: 'grade-2', grade: 2, question: 'Grade 2' })],
+      Language.EN,
+      [fallbackQuestion],
+      4,
+      () => 0
+    );
+
+    expect(question.question[Language.EN]).toBe('Fallback EN');
+  });
+
+  it('prioritizes exact grade questions over general questions', () => {
+    const question = pickQuestionFromBank(
+      [
+        createQuestion({ id: 'general', question: 'General' }),
+        createQuestion({ id: 'grade-3', grade: 3, question: 'Grade 3' }),
+      ],
+      Language.EN,
+      [fallbackQuestion],
+      3,
+      () => 0
+    );
+
+    expect(question.question[Language.EN]).toBe('Grade 3');
+  });
+
+  it('uses general questions when exact grade questions are absent', () => {
+    const question = pickQuestionFromBank(
+      [createQuestion({ id: 'general', question: 'General' })],
+      Language.EN,
+      [fallbackQuestion],
+      4,
+      () => 0
+    );
+
+    expect(question.question[Language.EN]).toBe('General');
+  });
+
+  it('uses built-in fallback questions when exact and general questions are absent', () => {
+    const question = pickQuestionFromBank(
+      [createQuestion({ id: 'grade-2', grade: 2, question: 'Grade 2' })],
+      Language.EN,
+      [fallbackQuestion],
+      3,
+      () => 0
+    );
+
+    expect(question.question[Language.EN]).toBe('Fallback EN');
+  });
+
+  it('does not include disabled questions in grade candidate pools', () => {
+    expect(getQuestionCandidatesForPlayerGrade(
+      [createQuestion({ id: 'disabled-grade-1', grade: 1, enabled: false })],
+      Language.EN,
+      1
+    )).toEqual([]);
+  });
+
+  it('does not include other language questions in grade candidate pools', () => {
+    expect(getQuestionCandidatesForPlayerGrade(
+      [createQuestion({ id: 'pl-grade-1', language: Language.PL, grade: 1 })],
+      Language.EN,
+      1
+    )).toEqual([]);
+  });
+
+  it('gives two players with different grades different candidate pools', () => {
+    const questions = [
+      createQuestion({ id: 'grade-1', grade: 1, question: 'Grade 1' }),
+      createQuestion({ id: 'grade-4', grade: 4, question: 'Grade 4' }),
+    ];
+
+    expect(getQuestionCandidatesForPlayerGrade(questions, Language.EN, 1).map((question) => question.id)).toEqual(['grade-1']);
+    expect(getQuestionCandidatesForPlayerGrade(questions, Language.EN, 4).map((question) => question.id)).toEqual(['grade-4']);
+  });
+
+  it('keeps pending door questions instead of replacing them by grade', () => {
+    const pendingQuestion = { ...fallbackQuestion, id: 99 };
+    const question = pickDoorQuestion(
+      [createQuestion({ id: 'grade-4', grade: 4, question: 'Grade 4' })],
+      Language.EN,
+      [fallbackQuestion],
+      4,
+      pendingQuestion,
+      () => 0
+    );
+
+    expect(question).toBe(pendingQuestion);
+  });
+
+  it('declares supported grades 1 through 4', () => {
+    expect(SUPPORTED_GRADES).toEqual([1, 2, 3, 4]);
   });
 
   it('filters questions by language when selecting for the game', () => {

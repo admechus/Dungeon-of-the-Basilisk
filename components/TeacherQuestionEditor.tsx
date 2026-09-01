@@ -8,6 +8,7 @@ import { filterQuestionsForTeacher, getQuestionSubjectLabel, QUESTION_SUBJECTS }
 import { normalizeQuestion, validateQuestion } from '../questionValidation';
 import { resetQuestionBank, saveQuestionBank } from '../questionStorage';
 import { EditableQuestion, Language, QuestionDifficulty, QuestionSubject } from '../types';
+import { SUPPORTED_GRADES } from '../grades';
 import {
   formatTeacherText,
   getTeacherEditorText,
@@ -492,7 +493,18 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
                   </label>
                   <label className="block text-xs uppercase tracking-widest text-stone-500">
                     {text.grade}
-                    <input value={draft.grade ?? ''} onChange={(event) => setDraft({ ...draft, grade: event.target.value === '' ? undefined : Number(event.target.value) })} type="number" min="1" className="mt-1 w-full bg-stone-900 border border-stone-700 px-3 py-2 text-sm text-stone-200" />
+                    <select
+                      value={draft.grade ?? ''}
+                      onChange={(event) => setDraft({ ...draft, grade: event.target.value === '' ? undefined : Number(event.target.value) })}
+                      className="mt-1 w-full bg-stone-900 border border-stone-700 px-3 py-2 text-sm text-stone-200"
+                    >
+                      <option value="">{text.gradeGeneral}</option>
+                      {SUPPORTED_GRADES.map((grade) => (
+                        <option key={grade} value={grade}>
+                          {formatTeacherText(text.gradeValue, { grade })}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="block text-xs uppercase tracking-widest text-stone-500">
                     {text.difficulty}

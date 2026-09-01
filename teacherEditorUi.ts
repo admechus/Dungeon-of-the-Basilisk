@@ -13,7 +13,7 @@ type TeacherEditorSystemMessage =
   | 'At least two answer options are required.'
   | 'Answer options cannot be empty.'
   | 'Correct answer must point to an existing option.'
-  | 'Grade must be a positive integer.'
+  | 'Grade must be 1, 2, 3, or 4.'
   | 'Difficulty must be 1, 2, or 3.'
   | 'Question subject is not supported.'
   | 'Question image id must be a string.'
@@ -51,7 +51,7 @@ const TEACHER_EDITOR_SYSTEM_MESSAGES: readonly TeacherEditorSystemMessage[] = [
   'At least two answer options are required.',
   'Answer options cannot be empty.',
   'Correct answer must point to an existing option.',
-  'Grade must be a positive integer.',
+  'Grade must be 1, 2, 3, or 4.',
   'Difficulty must be 1, 2, or 3.',
   'Question subject is not supported.',
   'Question image id must be a string.',
@@ -133,6 +133,8 @@ export interface TeacherEditorText {
   subject: string;
   topic: string;
   grade: string;
+  gradeGeneral: string;
+  gradeValue: string;
   difficulty: string;
   explanation: string;
   questionImage: string;
@@ -251,6 +253,8 @@ const EN: TeacherEditorText = {
   subject: 'Subject',
   topic: 'Topic',
   grade: 'Grade',
+  gradeGeneral: 'General',
+  gradeValue: 'Grade {grade}',
   difficulty: 'Difficulty',
   explanation: 'Explanation',
   questionImage: 'Question image',
@@ -367,6 +371,8 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     subject: 'Przedmiot',
     topic: 'Temat',
     grade: 'Klasa',
+    gradeGeneral: 'Bez klasy / Ogólne',
+    gradeValue: 'Klasa {grade}',
     difficulty: 'Trudność',
     explanation: 'Wyjaśnienie',
     empty: 'Brak pytań dla wybranych filtrów.',
@@ -428,6 +434,8 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     subject: 'Предмет',
     topic: 'Тема',
     grade: 'Клас',
+    gradeGeneral: 'Без класу / Загальні',
+    gradeValue: 'Клас {grade}',
     difficulty: 'Складність',
     explanation: 'Пояснення',
     empty: 'Немає питань для вибраних фільтрів.',
@@ -489,6 +497,8 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     subject: 'Предмет',
     topic: 'Тема',
     grade: 'Класс',
+    gradeGeneral: 'Без класса / Общие',
+    gradeValue: 'Класс {grade}',
     difficulty: 'Сложность',
     explanation: 'Пояснение',
     empty: 'Нет вопросов для выбранных фильтров.',
@@ -550,6 +560,8 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     subject: '科目',
     topic: 'トピック',
     grade: '学年',
+    gradeGeneral: '学年なし / 一般',
+    gradeValue: '{grade}年',
     difficulty: '難易度',
     explanation: '説明',
     empty: '選択した条件に一致する質問はありません。',
@@ -601,7 +613,7 @@ const EN_SYSTEM_MESSAGES: Record<TeacherEditorSystemMessage, string> = {
   'At least two answer options are required.': 'At least two answer options are required.',
   'Answer options cannot be empty.': 'Answer options cannot be empty.',
   'Correct answer must point to an existing option.': 'Correct answer must point to an existing option.',
-  'Grade must be a positive integer.': 'Grade must be a positive integer.',
+  'Grade must be 1, 2, 3, or 4.': 'Grade must be 1, 2, 3, or 4.',
   'Difficulty must be 1, 2, or 3.': 'Difficulty must be 1, 2, or 3.',
   'Question subject is not supported.': 'Question subject is not supported.',
   'Question image id must be a string.': 'Question image id must be a string.',
@@ -642,7 +654,7 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'At least two answer options are required.': 'Wymagane sa co najmniej dwie odpowiedzi.',
     'Answer options cannot be empty.': 'Odpowiedzi nie moga byc puste.',
     'Correct answer must point to an existing option.': 'Poprawna odpowiedz musi wskazywac istniejaca opcje.',
-    'Grade must be a positive integer.': 'Klasa musi byc dodatnia liczba calkowita.',
+    'Grade must be 1, 2, 3, or 4.': 'Klasa musi wynosic 1, 2, 3 albo 4.',
     'Difficulty must be 1, 2, or 3.': 'Trudnosc musi wynosic 1, 2 albo 3.',
     'Question subject is not supported.': 'Przedmiot pytania nie jest obslugiwany.',
     'Question image id must be a string.': 'ID obrazu pytania musi byc tekstem.',
@@ -680,7 +692,7 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'At least two answer options are required.': 'Потрібно щонайменше два варіанти відповіді.',
     'Answer options cannot be empty.': 'Варіанти відповіді не можуть бути порожніми.',
     'Correct answer must point to an existing option.': 'Правильна відповідь має вказувати на наявний варіант.',
-    'Grade must be a positive integer.': 'Клас має бути додатним цілим числом.',
+    'Grade must be 1, 2, 3, or 4.': 'Клас має бути 1, 2, 3 або 4.',
     'Difficulty must be 1, 2, or 3.': 'Складність має бути 1, 2 або 3.',
     'Question subject is not supported.': 'Предмет питання не підтримується.',
     'Question image id must be a string.': 'ID зображення питання має бути рядком.',
@@ -718,7 +730,7 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'At least two answer options are required.': 'Нужно минимум два варианта ответа.',
     'Answer options cannot be empty.': 'Варианты ответа не могут быть пустыми.',
     'Correct answer must point to an existing option.': 'Правильный ответ должен указывать на существующий вариант.',
-    'Grade must be a positive integer.': 'Класс должен быть положительным целым числом.',
+    'Grade must be 1, 2, 3, or 4.': 'Класс должен быть 1, 2, 3 или 4.',
     'Difficulty must be 1, 2, or 3.': 'Сложность должна быть 1, 2 или 3.',
     'Question subject is not supported.': 'Предмет вопроса не поддерживается.',
     'Question image id must be a string.': 'ID изображения вопроса должен быть строкой.',
@@ -756,7 +768,7 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'At least two answer options are required.': '回答は少なくとも2つ必要です。',
     'Answer options cannot be empty.': '回答を空にすることはできません。',
     'Correct answer must point to an existing option.': '正解は既存の回答を指す必要があります。',
-    'Grade must be a positive integer.': '学年は正の整数である必要があります。',
+    'Grade must be 1, 2, 3, or 4.': '学年は1、2、3、4のいずれかです。',
     'Difficulty must be 1, 2, or 3.': '難易度は1、2、3のいずれかです。',
     'Question subject is not supported.': '質問の科目はサポートされていません。',
     'Question image id must be a string.': '質問画像IDは文字列である必要があります。',

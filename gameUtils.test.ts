@@ -15,6 +15,7 @@ describe('createPlayers', () => {
       {
         id: 0,
         name: 'Player 1',
+        grade: 1,
         color: PLAYER_COLORS[0],
         positionIndex: 0,
         hasFinished: false,
@@ -24,6 +25,7 @@ describe('createPlayers', () => {
       {
         id: 1,
         name: 'Player 2',
+        grade: 1,
         color: PLAYER_COLORS[1],
         positionIndex: 0,
         hasFinished: false,
@@ -37,6 +39,12 @@ describe('createPlayers', () => {
     const [player] = createPlayers(1, Language.PL, PLAYER_COLORS);
 
     expect(player.name).toBe('Gracz 1');
+  });
+
+  it('assigns per-player grades from setup', () => {
+    const players = createPlayers(2, Language.EN, PLAYER_COLORS, [2, 4]);
+
+    expect(players.map((player) => player.grade)).toEqual([2, 4]);
   });
 });
 

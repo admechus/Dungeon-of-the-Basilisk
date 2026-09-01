@@ -78,6 +78,7 @@ export interface LocalImageAsset extends LocalImageAssetMetadata {
 export interface Player {
   id: number;
   name: string;
+  grade: number;
   color: string;
   positionIndex: number;
   hasFinished: boolean;

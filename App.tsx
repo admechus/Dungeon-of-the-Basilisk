@@ -3,12 +3,13 @@ import { EditableQuestion, GamePhase, Language, Player, GameState, DiceFace } fr
 import type { AssetConfig } from './types';
 import { PLAYER_COLORS, CENTER_INDEX, MAX_PLAYERS } from './constants';
 import { DICTIONARY, QUESTIONS_DB } from './dictionary';
+import { DEFAULT_PLAYER_GRADE, SUPPORTED_GRADES } from './grades';
 import Board from './components/Board';
 import Dice3D from './components/Dice3D';
 import ImageAssetPreview from './components/ImageAssetPreview';
 import TeacherQuestionEditor from './components/TeacherQuestionEditor';
 import { generateGameEvent } from './services/gameEventService';
-import { pickQuestionFromBank } from './questionBank';
+import { pickDoorQuestion } from './questionBank';
 import { loadQuestionBank } from './questionStorage';
 import {
   createBaseGameState,
@@ -60,6 +61,7 @@ const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(createBaseGameState());
 
   const [setupCount, setSetupCount] = useState<number>(2);
+  const [setupGrades, setSetupGrades] = useState<number[]>(() => Array(MAX_PLAYERS).fill(DEFAULT_PLAYER_GRADE));
   const [showAssetsConfig, setShowAssetsConfig] = useState<boolean>(false);
   const [showQuestionEditor, setShowQuestionEditor] = useState<boolean>(false);
   const [questionBank, setQuestionBank] = useState<EditableQuestion[]>(() => loadQuestionBank().questions);
@@ -89,6 +91,9 @@ const App: React.FC = () => {
     return t.dice[face];
   };
 
+  const getGradeLabel = (grade: number) =>
+    t.ui.grade_value.replace('{grade}', grade.toString());
+
   const pickRandomImage = (images: string[]) => {
     if (images.length === 0) return null;
     return images[Math.floor(Math.random() * images.length)];
@@ -106,7 +111,7 @@ const App: React.FC = () => {
   const handleStartGame = () => {
     rollInProgressRef.current = false;
     setIsRollingDice(false);
-    const newPlayers = createPlayers(setupCount, gameState.language, PLAYER_COLORS);
+    const newPlayers = createPlayers(setupCount, gameState.language, PLAYER_COLORS, setupGrades);
     const initialBoard = createInitialBoardState(setupCount);
 
     setGameState(prev => ({
@@ -322,7 +327,13 @@ const App: React.FC = () => {
     } else if (cellType === 'door') {
         // Trigger Quiz
         // Use stored question if this was a retry
-        const activeQ = storedQuestion ?? pickQuestionFromBank(questionBank, gameState.language, QUESTIONS_DB);
+        const activeQ = pickDoorQuestion(
+            questionBank,
+            gameState.language,
+            QUESTIONS_DB,
+            player.grade,
+            storedQuestion
+        );
 
         addLog(`${t.events.door_locked}`);
         setGameState(prev => ({
@@ -568,6 +579,33 @@ const App: React.FC = () => {
             />
           </div>
 
+          <div className="mb-8 p-4 bg-black/40 rounded border border-stone-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Array.from({ length: setupCount }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-4 h-4 rounded-full border border-stone-600" style={{ backgroundColor: PLAYER_COLORS[i] }}></div>
+                  <span className="flex-1 text-sm text-stone-300">{`${t.ui.player_name} ${i + 1}`}</span>
+                  <label className="text-xs uppercase tracking-widest text-stone-500">
+                    {t.ui.grade}
+                    <select
+                      value={setupGrades[i]}
+                      onChange={(e) => {
+                        const nextGrades = [...setupGrades];
+                        nextGrades[i] = Number(e.target.value);
+                        setSetupGrades(nextGrades);
+                      }}
+                      className="ml-2 bg-stone-900 border border-stone-700 px-2 py-1 text-sm text-stone-200"
+                    >
+                      {SUPPORTED_GRADES.map((grade) => (
+                        <option key={grade} value={grade}>{getGradeLabel(grade)}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Custom Assets Toggle */}
           <div className="mb-8">
              <button 
@@ -720,7 +758,7 @@ const App: React.FC = () => {
             <div className="flex items-center justify-between">
                 <span className="text-stone-500 font-serif italic text-sm">{t.game.turn}</span>
                 <div className="vn-name-tag" style={{ borderLeftColor: currentPlayer.color }}>
-                   {currentPlayer.name}
+                   {currentPlayer.name} - {getGradeLabel(currentPlayer.grade)}
                 </div>
             </div>
         </div>

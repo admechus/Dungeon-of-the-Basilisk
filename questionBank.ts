@@ -1,6 +1,7 @@
 import { QUESTIONS_DB } from './dictionary';
 import { EditableQuestion, Language, QuizQuestion } from './types';
 import { normalizeQuestion, parseEditableQuestion, validateQuestion } from './questionValidation';
+import { DEFAULT_PLAYER_GRADE } from './grades';
 
 export const QUESTION_BANK_FORMAT = 'dungeon-of-the-basilisk-question-bank';
 export const QUESTION_BANK_VERSION = 1;
@@ -177,6 +178,19 @@ export const getEnabledQuestionsForLanguage = (
 ): EditableQuestion[] =>
   questions.filter((question) => question.enabled && question.language === language);
 
+export const getQuestionCandidatesForPlayerGrade = (
+  questions: EditableQuestion[],
+  language: Language,
+  playerGrade: number
+): EditableQuestion[] => {
+  const enabledQuestions = getEnabledQuestionsForLanguage(questions, language);
+  const exactGradeQuestions = enabledQuestions.filter((question) => question.grade === playerGrade);
+
+  if (exactGradeQuestions.length > 0) return exactGradeQuestions;
+
+  return enabledQuestions.filter((question) => question.grade === undefined);
+};
+
 export const toQuizQuestion = (question: EditableQuestion): QuizQuestion => {
   const numericId = Math.abs(
     Array.from(question.id).reduce((hash, character) => (hash * 31 + character.charCodeAt(0)) | 0, 0)
@@ -205,15 +219,28 @@ export const pickQuestionFromBank = (
   questions: EditableQuestion[],
   language: Language,
   fallbackQuestions: QuizQuestion[],
+  playerGradeOrRandom: number | (() => number) = DEFAULT_PLAYER_GRADE,
   random: () => number = Math.random
 ): QuizQuestion => {
-  const enabledQuestions = getEnabledQuestionsForLanguage(questions, language);
+  const playerGrade = typeof playerGradeOrRandom === 'number' ? playerGradeOrRandom : DEFAULT_PLAYER_GRADE;
+  const pickRandom = typeof playerGradeOrRandom === 'function' ? playerGradeOrRandom : random;
+  const enabledQuestions = getQuestionCandidatesForPlayerGrade(questions, language, playerGrade);
 
   if (enabledQuestions.length > 0) {
-    return toQuizQuestion(enabledQuestions[Math.floor(random() * enabledQuestions.length)]);
+    return toQuizQuestion(enabledQuestions[Math.floor(pickRandom() * enabledQuestions.length)]);
   }
 
   const localizedFallbackQuestions = fallbackQuestions.filter((question) => Boolean(question.question[language]));
   const fallbackPool = localizedFallbackQuestions.length > 0 ? localizedFallbackQuestions : fallbackQuestions;
-  return fallbackPool[Math.floor(random() * fallbackPool.length)];
+  return fallbackPool[Math.floor(pickRandom() * fallbackPool.length)];
 };
+
+export const pickDoorQuestion = (
+  questions: EditableQuestion[],
+  language: Language,
+  fallbackQuestions: QuizQuestion[],
+  playerGrade: number,
+  pendingQuestion?: QuizQuestion,
+  random: () => number = Math.random
+): QuizQuestion =>
+  pendingQuestion ?? pickQuestionFromBank(questions, language, fallbackQuestions, playerGrade, random);

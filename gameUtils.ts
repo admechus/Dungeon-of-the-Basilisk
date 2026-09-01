@@ -1,5 +1,6 @@
 import { DICE_FACES, MAX_PLAYERS } from './constants';
 import { DICTIONARY, QUESTIONS_DB } from './dictionary';
+import { DEFAULT_PLAYER_GRADE, isSupportedGrade } from './grades';
 import { AssetConfig, CellType, DiceFace, GamePhase, GameState, Language, Player, QuizQuestion } from './types';
 
 const RPS_CHOICES = ['rock', 'paper', 'scissors'] as const;
@@ -41,10 +42,16 @@ export const createBaseGameState = (language: Language = Language.EN): GameState
 export const getPlayerName = (index: number, language: Language) =>
   `${DICTIONARY[language].ui.player_name} ${index + 1}`;
 
-export const createPlayers = (playerCount: number, language: Language, colors: string[]): Player[] =>
+export const createPlayers = (
+  playerCount: number,
+  language: Language,
+  colors: string[],
+  grades: readonly number[] = []
+): Player[] =>
   Array.from({ length: playerCount }, (_, i) => ({
     id: i,
     name: getPlayerName(i, language),
+    grade: isSupportedGrade(grades[i]) ? grades[i] : DEFAULT_PLAYER_GRADE,
     color: colors[i],
     positionIndex: 0,
     hasFinished: false,
