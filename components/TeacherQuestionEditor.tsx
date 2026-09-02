@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ImageAssetLibrary from './ImageAssetLibrary';
 import ImageAssetPicker from './ImageAssetPicker';
+import QuestionExcelImportExport from './QuestionExcelImportExport';
 import QuestionBankViews from './QuestionBankViews';
 import { createQuestionBankExport, mergeQuestionBanks, parseQuestionBankJson, replaceQuestionBank } from '../questionBank';
 import { filterQuestionsForTeacher, getQuestionSubjectLabel, QUESTION_SUBJECTS } from '../questionSubjects';
@@ -380,11 +381,25 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
             </section>
 
             <aside ref={formRef} className="border border-stone-800 bg-black/50 p-4 h-fit lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
-              <div className="flex flex-wrap gap-2 mb-4">
-                <button onClick={exportQuestions} className="vn-button px-3 py-2 text-xs">{text.exportJson}</button>
-                <button onClick={() => requestImport('replace')} className="vn-button px-3 py-2 text-xs">{text.importReplace}</button>
-                <button onClick={() => requestImport('merge')} className="vn-button px-3 py-2 text-xs">{text.importMerge}</button>
-                <button onClick={resetToBuiltIns} className="vn-button px-3 py-2 text-xs">{text.reset}</button>
+              <div className="space-y-3 mb-4">
+                <div className="border border-stone-800 bg-stone-950/50 p-3">
+                  <p className="text-xs uppercase tracking-widest text-stone-500 mb-2">{text.jsonTools}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={exportQuestions} className="vn-button px-3 py-2 text-xs">{text.exportJson}</button>
+                    <button onClick={() => requestImport('replace')} className="vn-button px-3 py-2 text-xs">{text.importReplace}</button>
+                    <button onClick={() => requestImport('merge')} className="vn-button px-3 py-2 text-xs">{text.importMerge}</button>
+                    <button onClick={resetToBuiltIns} className="vn-button px-3 py-2 text-xs">{text.reset}</button>
+                  </div>
+                </div>
+                <QuestionExcelImportExport
+                  questions={questions}
+                  language={language}
+                  text={text}
+                  onApply={(nextQuestions, message) => {
+                    persistQuestions(nextQuestions, message);
+                    startAdd();
+                  }}
+                />
                 <input
                   ref={fileInputRef}
                   type="file"

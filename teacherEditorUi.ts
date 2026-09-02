@@ -29,7 +29,19 @@ type TeacherEditorSystemMessage =
   | 'Image height is larger than 2048 pixels.'
   | 'Image name is required.'
   | 'Image file could not be decoded.'
-  | 'Image file is corrupted or cannot be decoded.';
+  | 'Image file is corrupted or cannot be decoded.'
+  | 'Invalid workbook.'
+  | 'Questions sheet not found.'
+  | 'Correct answer is required.'
+  | 'Unsupported language:'
+  | 'Unsupported subject:'
+  | 'Unsupported grade:'
+  | 'Unsupported difficulty:'
+  | 'Unsupported correct value:'
+  | 'Unsupported enabled value:'
+  | 'is filled after an empty option column.'
+  | 'but only'
+  | 'answers exist.';
 
 const TEACHER_EDITOR_SYSTEM_MESSAGES: readonly TeacherEditorSystemMessage[] = [
   'Question id is required.',
@@ -56,6 +68,18 @@ const TEACHER_EDITOR_SYSTEM_MESSAGES: readonly TeacherEditorSystemMessage[] = [
   'Image name is required.',
   'Image file could not be decoded.',
   'Image file is corrupted or cannot be decoded.',
+  'Invalid workbook.',
+  'Questions sheet not found.',
+  'Correct answer is required.',
+  'Unsupported language:',
+  'Unsupported subject:',
+  'Unsupported grade:',
+  'Unsupported difficulty:',
+  'Unsupported correct value:',
+  'Unsupported enabled value:',
+  'is filled after an empty option column.',
+  'but only',
+  'answers exist.',
 ];
 
 const isTeacherEditorSystemMessage = (message: string): message is TeacherEditorSystemMessage =>
@@ -167,6 +191,35 @@ export interface TeacherEditorText {
   imageRenamed: string;
   imageDeleted: string;
   imagesCleared: string;
+  jsonTools: string;
+  excelTools: string;
+  importExcel: string;
+  exportExcel: string;
+  downloadExcelTemplate: string;
+  totalRows: string;
+  valid: string;
+  invalid: string;
+  conflicts: string;
+  generatedIds: string;
+  row: string;
+  error: string;
+  readyToImport: string;
+  importCancelled: string;
+  invalidWorkbook: string;
+  questionsSheetNotFound: string;
+  unsupportedValue: string;
+  replace: string;
+  merge: string;
+  applyReplace: string;
+  applyMerge: string;
+  excelPreviewTitle: string;
+  excelNoProblems: string;
+  excelImportReady: string;
+  excelImportApplied: string;
+  excelReplaceBlocked: string;
+  excelTemplateExported: string;
+  excelExported: string;
+  excelGeneratedIdsHint: string;
 }
 
 const EN: TeacherEditorText = {
@@ -256,6 +309,35 @@ const EN: TeacherEditorText = {
   imageRenamed: 'Image renamed.',
   imageDeleted: 'Image deleted.',
   imagesCleared: 'Image library cleared.',
+  jsonTools: 'JSON',
+  excelTools: 'Excel',
+  importExcel: 'Import Excel',
+  exportExcel: 'Export Excel',
+  downloadExcelTemplate: 'Download Excel template',
+  totalRows: 'Total rows',
+  valid: 'Valid',
+  invalid: 'Invalid',
+  conflicts: 'Conflicts',
+  generatedIds: 'Generated IDs',
+  row: 'Row',
+  error: 'Error',
+  readyToImport: 'Ready to import',
+  importCancelled: 'Import cancelled.',
+  invalidWorkbook: 'Invalid workbook.',
+  questionsSheetNotFound: 'Questions sheet not found.',
+  unsupportedValue: 'Unsupported value',
+  replace: 'Replace',
+  merge: 'Merge',
+  applyReplace: 'Replace current bank',
+  applyMerge: 'Merge with current bank',
+  excelPreviewTitle: 'Excel import preview',
+  excelNoProblems: 'No row problems found.',
+  excelImportReady: 'Excel file checked. Review the preview before importing.',
+  excelImportApplied: 'Excel import applied.',
+  excelReplaceBlocked: 'Replace is blocked until invalid rows are fixed.',
+  excelTemplateExported: 'Excel template downloaded.',
+  excelExported: 'Excel file exported.',
+  excelGeneratedIdsHint: 'Rows with empty id receive generated local ids.',
 };
 
 export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
@@ -296,6 +378,35 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     imageRequirements: 'PNG, JPEG, WebP. Maks. {size} i {dimension}px.',
     imageSaveFailed: 'Nie mozna zapisac obrazu.',
     emptyQuestion: '(puste pytanie)',
+    jsonTools: 'JSON',
+    excelTools: 'Excel',
+    importExcel: 'Import Excel',
+    exportExcel: 'Eksport Excel',
+    downloadExcelTemplate: 'Pobierz szablon Excel',
+    totalRows: 'Wiersze razem',
+    valid: 'Poprawne',
+    invalid: 'Niepoprawne',
+    conflicts: 'Konflikty',
+    generatedIds: 'Wygenerowane ID',
+    row: 'Wiersz',
+    error: 'Blad',
+    readyToImport: 'Gotowe do importu',
+    importCancelled: 'Import anulowany.',
+    invalidWorkbook: 'Niepoprawny skoroszyt.',
+    questionsSheetNotFound: 'Nie znaleziono arkusza Questions.',
+    unsupportedValue: 'Nieobslugiwana wartosc',
+    replace: 'Zastap',
+    merge: 'Polacz',
+    applyReplace: 'Zastap obecny bank',
+    applyMerge: 'Polacz z obecnym bankiem',
+    excelPreviewTitle: 'Podglad importu Excel',
+    excelNoProblems: 'Nie znaleziono problemow w wierszach.',
+    excelImportReady: 'Plik Excel sprawdzony. Przejrzyj podglad przed importem.',
+    excelImportApplied: 'Import Excel zastosowany.',
+    excelReplaceBlocked: 'Zastapienie jest zablokowane do poprawienia blednych wierszy.',
+    excelTemplateExported: 'Szablon Excel pobrany.',
+    excelExported: 'Plik Excel wyeksportowany.',
+    excelGeneratedIdsHint: 'Wiersze bez id otrzymuja lokalnie wygenerowane id.',
   },
   [Language.UA]: {
     ...EN,
@@ -328,6 +439,35 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     imageRequirements: 'PNG, JPEG, WebP. Макс. {size} і {dimension}px.',
     imageSaveFailed: 'Не вдалося зберегти зображення.',
     emptyQuestion: '(порожнє питання)',
+    jsonTools: 'JSON',
+    excelTools: 'Excel',
+    importExcel: 'Імпорт Excel',
+    exportExcel: 'Експорт Excel',
+    downloadExcelTemplate: 'Завантажити шаблон Excel',
+    totalRows: 'Усього рядків',
+    valid: 'Валідні',
+    invalid: 'Невалідні',
+    conflicts: 'Конфлікти',
+    generatedIds: 'Згенеровані ID',
+    row: 'Рядок',
+    error: 'Помилка',
+    readyToImport: 'Готово до імпорту',
+    importCancelled: 'Імпорт скасовано.',
+    invalidWorkbook: 'Невалідна книга.',
+    questionsSheetNotFound: 'Аркуш Questions не знайдено.',
+    unsupportedValue: 'Непідтримуване значення',
+    replace: 'Замінити',
+    merge: 'Об’єднати',
+    applyReplace: 'Замінити поточний банк',
+    applyMerge: 'Об’єднати з поточним банком',
+    excelPreviewTitle: 'Попередній перегляд імпорту Excel',
+    excelNoProblems: 'Проблем у рядках не знайдено.',
+    excelImportReady: 'Файл Excel перевірено. Перегляньте результат перед імпортом.',
+    excelImportApplied: 'Імпорт Excel застосовано.',
+    excelReplaceBlocked: 'Replace заблоковано, доки не виправлено невалідні рядки.',
+    excelTemplateExported: 'Шаблон Excel завантажено.',
+    excelExported: 'Файл Excel експортовано.',
+    excelGeneratedIdsHint: 'Рядки без id отримують локально згенеровані id.',
   },
   [Language.RU]: {
     ...EN,
@@ -360,6 +500,35 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     imageRequirements: 'PNG, JPEG, WebP. Макс. {size} и {dimension}px.',
     imageSaveFailed: 'Не удалось сохранить изображение.',
     emptyQuestion: '(пустой вопрос)',
+    jsonTools: 'JSON',
+    excelTools: 'Excel',
+    importExcel: 'Импорт Excel',
+    exportExcel: 'Экспорт Excel',
+    downloadExcelTemplate: 'Скачать шаблон Excel',
+    totalRows: 'Всего строк',
+    valid: 'Валидные',
+    invalid: 'Невалидные',
+    conflicts: 'Конфликты',
+    generatedIds: 'Сгенерированные ID',
+    row: 'Строка',
+    error: 'Ошибка',
+    readyToImport: 'Готово к импорту',
+    importCancelled: 'Импорт отменён.',
+    invalidWorkbook: 'Некорректная книга.',
+    questionsSheetNotFound: 'Лист Questions не найден.',
+    unsupportedValue: 'Неподдерживаемое значение',
+    replace: 'Заменить',
+    merge: 'Объединить',
+    applyReplace: 'Заменить текущий банк',
+    applyMerge: 'Объединить с текущим банком',
+    excelPreviewTitle: 'Предпросмотр импорта Excel',
+    excelNoProblems: 'Проблем в строках не найдено.',
+    excelImportReady: 'Файл Excel проверен. Просмотрите результат перед импортом.',
+    excelImportApplied: 'Импорт Excel применён.',
+    excelReplaceBlocked: 'Replace заблокирован до исправления невалидных строк.',
+    excelTemplateExported: 'Шаблон Excel скачан.',
+    excelExported: 'Файл Excel экспортирован.',
+    excelGeneratedIdsHint: 'Строки без id получают локально сгенерированные id.',
   },
   [Language.JA]: {
     ...EN,
@@ -392,6 +561,35 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     imageRequirements: 'PNG, JPEG, WebP. 最大 {size}、{dimension}px。',
     imageSaveFailed: '画像を保存できませんでした。',
     emptyQuestion: '(空の質問)',
+    jsonTools: 'JSON',
+    excelTools: 'Excel',
+    importExcel: 'Excelをインポート',
+    exportExcel: 'Excelをエクスポート',
+    downloadExcelTemplate: 'Excelテンプレートをダウンロード',
+    totalRows: '合計行',
+    valid: '有効',
+    invalid: '無効',
+    conflicts: '競合',
+    generatedIds: '生成ID',
+    row: '行',
+    error: 'エラー',
+    readyToImport: 'インポート準備完了',
+    importCancelled: 'インポートをキャンセルしました。',
+    invalidWorkbook: '無効なブックです。',
+    questionsSheetNotFound: 'Questionsシートが見つかりません。',
+    unsupportedValue: 'サポートされていない値',
+    replace: '置換',
+    merge: 'マージ',
+    applyReplace: '現在のバンクを置換',
+    applyMerge: '現在のバンクにマージ',
+    excelPreviewTitle: 'Excelインポートのプレビュー',
+    excelNoProblems: '行の問題は見つかりませんでした。',
+    excelImportReady: 'Excelファイルを確認しました。インポート前にプレビューしてください。',
+    excelImportApplied: 'Excelインポートを適用しました。',
+    excelReplaceBlocked: '無効な行を修正するまで置換はできません。',
+    excelTemplateExported: 'Excelテンプレートをダウンロードしました。',
+    excelExported: 'Excelファイルをエクスポートしました。',
+    excelGeneratedIdsHint: 'idが空の行にはローカル生成idが割り当てられます。',
   },
 };
 
@@ -420,6 +618,18 @@ const EN_SYSTEM_MESSAGES: Record<TeacherEditorSystemMessage, string> = {
   'Image name is required.': 'Image name is required.',
   'Image file could not be decoded.': 'Image file could not be decoded.',
   'Image file is corrupted or cannot be decoded.': 'Image file is corrupted or cannot be decoded.',
+  'Invalid workbook.': 'Invalid workbook.',
+  'Questions sheet not found.': 'Questions sheet not found.',
+  'Correct answer is required.': 'Correct answer is required.',
+  'Unsupported language:': 'Unsupported language:',
+  'Unsupported subject:': 'Unsupported subject:',
+  'Unsupported grade:': 'Unsupported grade:',
+  'Unsupported difficulty:': 'Unsupported difficulty:',
+  'Unsupported correct value:': 'Unsupported correct value:',
+  'Unsupported enabled value:': 'Unsupported enabled value:',
+  'is filled after an empty option column.': 'is filled after an empty option column.',
+  'but only': 'but only',
+  'answers exist.': 'answers exist.',
 };
 
 const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSystemMessage, string>>> = {
@@ -449,6 +659,18 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'Image name is required.': 'Nazwa obrazu jest wymagana.',
     'Image file could not be decoded.': 'Nie mozna odczytac pliku obrazu.',
     'Image file is corrupted or cannot be decoded.': 'Plik obrazu jest uszkodzony albo nie mozna go odczytac.',
+    'Invalid workbook.': 'Niepoprawny skoroszyt.',
+    'Questions sheet not found.': 'Nie znaleziono arkusza Questions.',
+    'Correct answer is required.': 'Poprawna odpowiedz jest wymagana.',
+    'Unsupported language:': 'Nieobslugiwany jezyk:',
+    'Unsupported subject:': 'Nieobslugiwany przedmiot:',
+    'Unsupported grade:': 'Nieobslugiwana klasa:',
+    'Unsupported difficulty:': 'Nieobslugiwana trudnosc:',
+    'Unsupported correct value:': 'Nieobslugiwana wartosc correct:',
+    'Unsupported enabled value:': 'Nieobslugiwana wartosc enabled:',
+    'is filled after an empty option column.': 'jest wypelniona po pustej kolumnie odpowiedzi.',
+    'but only': 'ale istnieje tylko',
+    'answers exist.': 'odpowiedzi.',
   },
   [Language.UA]: {
     'Question id is required.': 'ID питання є обов’язковим.',
@@ -475,6 +697,18 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'Image name is required.': 'Назва зображення є обов’язковою.',
     'Image file could not be decoded.': 'Не вдалося декодувати файл зображення.',
     'Image file is corrupted or cannot be decoded.': 'Файл зображення пошкоджений або його не вдалося декодувати.',
+    'Invalid workbook.': 'Невалідна книга.',
+    'Questions sheet not found.': 'Аркуш Questions не знайдено.',
+    'Correct answer is required.': 'Правильна відповідь є обов’язковою.',
+    'Unsupported language:': 'Непідтримувана мова:',
+    'Unsupported subject:': 'Непідтримуваний предмет:',
+    'Unsupported grade:': 'Непідтримуваний клас:',
+    'Unsupported difficulty:': 'Непідтримувана складність:',
+    'Unsupported correct value:': 'Непідтримуване значення correct:',
+    'Unsupported enabled value:': 'Непідтримуване значення enabled:',
+    'is filled after an empty option column.': 'заповнено після порожньої колонки відповіді.',
+    'but only': 'але існує лише',
+    'answers exist.': 'відповідей.',
   },
   [Language.RU]: {
     'Question id is required.': 'ID вопроса обязателен.',
@@ -501,6 +735,18 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'Image name is required.': 'Название изображения обязательно.',
     'Image file could not be decoded.': 'Не удалось декодировать файл изображения.',
     'Image file is corrupted or cannot be decoded.': 'Файл изображения повреждён или не декодируется.',
+    'Invalid workbook.': 'Некорректная книга.',
+    'Questions sheet not found.': 'Лист Questions не найден.',
+    'Correct answer is required.': 'Правильный ответ обязателен.',
+    'Unsupported language:': 'Неподдерживаемый язык:',
+    'Unsupported subject:': 'Неподдерживаемый предмет:',
+    'Unsupported grade:': 'Неподдерживаемый класс:',
+    'Unsupported difficulty:': 'Неподдерживаемая сложность:',
+    'Unsupported correct value:': 'Неподдерживаемое значение correct:',
+    'Unsupported enabled value:': 'Неподдерживаемое значение enabled:',
+    'is filled after an empty option column.': 'заполнен после пустой колонки ответа.',
+    'but only': 'но есть только',
+    'answers exist.': 'ответов.',
   },
   [Language.JA]: {
     'Question id is required.': '質問IDは必須です。',
@@ -527,6 +773,18 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'Image name is required.': '画像名は必須です。',
     'Image file could not be decoded.': '画像ファイルをデコードできませんでした。',
     'Image file is corrupted or cannot be decoded.': '画像ファイルが破損しているか、デコードできません。',
+    'Invalid workbook.': '無効なブックです。',
+    'Questions sheet not found.': 'Questionsシートが見つかりません。',
+    'Correct answer is required.': '正解は必須です。',
+    'Unsupported language:': 'サポートされていない言語:',
+    'Unsupported subject:': 'サポートされていない科目:',
+    'Unsupported grade:': 'サポートされていない学年:',
+    'Unsupported difficulty:': 'サポートされていない難易度:',
+    'Unsupported correct value:': 'サポートされていないcorrect値:',
+    'Unsupported enabled value:': 'サポートされていないenabled値:',
+    'is filled after an empty option column.': '空の回答列の後に入力されています。',
+    'but only': 'ただし存在する回答は',
+    'answers exist.': '個だけです。',
   },
 };
 
