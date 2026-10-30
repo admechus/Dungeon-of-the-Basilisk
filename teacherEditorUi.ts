@@ -6,6 +6,9 @@ export type TeacherEditorSortMode = 'bank' | 'question' | 'language' | 'subject'
 export type TeacherEditorSortDirection = 'asc' | 'desc';
 
 type TeacherEditorSystemMessage =
+  | 'Import file is not valid JSON.'
+  | 'Import file must contain a JSON object.'
+  | 'Question fields are invalid.'
   | 'Question id is required.'
   | 'Question id must be unique.'
   | 'Question language is not supported.'
@@ -44,6 +47,9 @@ type TeacherEditorSystemMessage =
   | 'answers exist.';
 
 const TEACHER_EDITOR_SYSTEM_MESSAGES: readonly TeacherEditorSystemMessage[] = [
+  'Import file is not valid JSON.',
+  'Import file must contain a JSON object.',
+  'Question fields are invalid.',
   'Question id is required.',
   'Question id must be unique.',
   'Question language is not supported.',
@@ -105,6 +111,11 @@ export const DEFAULT_TEACHER_EDITOR_UI_PREFERENCES: TeacherEditorUiPreferences =
 };
 
 export interface TeacherEditorText {
+  jsonPreviewTitle: string;
+  jsonTotalQuestions: string;
+  jsonQuestionNumber: string;
+  jsonReplaceBlocked: string;
+  jsonReadFailed: string;
   title: string;
   questionsTab: string;
   imagesTab: string;
@@ -229,6 +240,11 @@ export interface TeacherEditorText {
 }
 
 const EN: TeacherEditorText = {
+  jsonPreviewTitle: 'JSON import preview',
+  jsonTotalQuestions: 'Total questions',
+  jsonQuestionNumber: 'Question {number}',
+  jsonReplaceBlocked: 'Replace requires a non-empty, fully valid question bank. The current bank has not been changed.',
+  jsonReadFailed: 'The JSON file could not be read. The current bank has not been changed.',
   title: 'Teacher Question Bank',
   questionsTab: 'Questions',
   imagesTab: 'Images',
@@ -356,6 +372,11 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
   [Language.EN]: EN,
   [Language.PL]: {
     ...EN,
+    jsonPreviewTitle: 'Podgląd importu JSON',
+    jsonTotalQuestions: 'Łączna liczba pytań',
+    jsonQuestionNumber: 'Pytanie {number}',
+    jsonReplaceBlocked: 'Zastąpienie wymaga niepustego banku zawierającego wyłącznie poprawne pytania. Bieżący bank nie został zmieniony.',
+    jsonReadFailed: 'Nie udało się odczytać pliku JSON. Bieżący bank nie został zmieniony.',
     title: 'Bank pytań nauczyciela',
     questionsTab: 'Pytania',
     imagesTab: 'Obrazy',
@@ -428,6 +449,11 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
   },
   [Language.UA]: {
     ...EN,
+    jsonPreviewTitle: 'Попередній перегляд імпорту JSON',
+    jsonTotalQuestions: 'Усього питань',
+    jsonQuestionNumber: 'Питання {number}',
+    jsonReplaceBlocked: 'Для заміни потрібен непорожній банк без невалідних питань. Поточний банк не змінено.',
+    jsonReadFailed: 'Не вдалося прочитати файл JSON. Поточний банк не змінено.',
     title: 'Банк питань учителя',
     questionsTab: 'Питання',
     imagesTab: 'Зображення',
@@ -495,6 +521,11 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
   },
   [Language.RU]: {
     ...EN,
+    jsonPreviewTitle: 'Предпросмотр импорта JSON',
+    jsonTotalQuestions: 'Всего вопросов',
+    jsonQuestionNumber: 'Вопрос {number}',
+    jsonReplaceBlocked: 'Для замены нужен непустой банк без невалидных вопросов. Текущий банк не изменён.',
+    jsonReadFailed: 'Не удалось прочитать файл JSON. Текущий банк не изменён.',
     title: 'Банк вопросов учителя',
     questionsTab: 'Вопросы',
     imagesTab: 'Изображения',
@@ -562,6 +593,11 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
   },
   [Language.JA]: {
     ...EN,
+    jsonPreviewTitle: 'JSONインポートのプレビュー',
+    jsonTotalQuestions: '質問の総数',
+    jsonQuestionNumber: '質問 {number}',
+    jsonReplaceBlocked: '置換には、空ではなく、すべての質問が有効なバンクが必要です。現在のバンクは変更されていません。',
+    jsonReadFailed: 'JSONファイルを読み込めませんでした。現在のバンクは変更されていません。',
     title: '教師用質問バンク',
     questionsTab: '質問',
     imagesTab: '画像',
@@ -630,6 +666,9 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
 };
 
 const EN_SYSTEM_MESSAGES: Record<TeacherEditorSystemMessage, string> = {
+  'Import file is not valid JSON.': 'Import file is not valid JSON.',
+  'Import file must contain a JSON object.': 'Import file must contain a JSON object.',
+  'Question fields are invalid.': 'Question fields have invalid types or unsupported values.',
   'Question id is required.': 'Question id is required.',
   'Question id must be unique.': 'Question id must be unique.',
   'Question language is not supported.': 'Question language is not supported.',
@@ -671,6 +710,9 @@ const EN_SYSTEM_MESSAGES: Record<TeacherEditorSystemMessage, string> = {
 const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSystemMessage, string>>> = {
   [Language.EN]: EN_SYSTEM_MESSAGES,
   [Language.PL]: {
+    'Import file is not valid JSON.': 'Plik nie zawiera poprawnego JSON.',
+    'Import file must contain a JSON object.': 'Plik importu musi zawierać obiekt JSON.',
+    'Question fields are invalid.': 'Pola pytania mają nieprawidłowe typy lub nieobsługiwane wartości.',
     'Question id is required.': 'ID pytania jest wymagane.',
     'Question id must be unique.': 'ID pytania musi byc unikalne.',
     'Question language is not supported.': 'Jezyk pytania nie jest obslugiwany.',
@@ -709,6 +751,9 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'answers exist.': 'odpowiedzi.',
   },
   [Language.UA]: {
+    'Import file is not valid JSON.': 'Файл не містить коректного JSON.',
+    'Import file must contain a JSON object.': 'Файл імпорту має містити об’єкт JSON.',
+    'Question fields are invalid.': 'Поля питання мають некоректні типи або непідтримувані значення.',
     'Question id is required.': 'ID питання є обов’язковим.',
     'Question id must be unique.': 'ID питання має бути унікальним.',
     'Question language is not supported.': 'Мова питання не підтримується.',
@@ -747,6 +792,9 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'answers exist.': 'відповідей.',
   },
   [Language.RU]: {
+    'Import file is not valid JSON.': 'Файл не содержит корректный JSON.',
+    'Import file must contain a JSON object.': 'Файл импорта должен содержать объект JSON.',
+    'Question fields are invalid.': 'Поля вопроса имеют некорректные типы или неподдерживаемые значения.',
     'Question id is required.': 'ID вопроса обязателен.',
     'Question id must be unique.': 'ID вопроса должен быть уникальным.',
     'Question language is not supported.': 'Язык вопроса не поддерживается.',
@@ -785,6 +833,9 @@ const LOCALIZED_SYSTEM_MESSAGES: Record<Language, Partial<Record<TeacherEditorSy
     'answers exist.': 'ответов.',
   },
   [Language.JA]: {
+    'Import file is not valid JSON.': 'ファイルは有効なJSONではありません。',
+    'Import file must contain a JSON object.': 'インポートファイルにはJSONオブジェクトが必要です。',
+    'Question fields are invalid.': '質問のフィールドの型または値が無効です。',
     'Question id is required.': '質問IDは必須です。',
     'Question id must be unique.': '質問IDは一意である必要があります。',
     'Question language is not supported.': '質問の言語はサポートされていません。',

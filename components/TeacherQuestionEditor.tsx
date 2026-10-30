@@ -3,7 +3,7 @@ import ImageAssetLibrary from './ImageAssetLibrary';
 import ImageAssetPicker from './ImageAssetPicker';
 import QuestionExcelImportExport from './QuestionExcelImportExport';
 import QuestionBankViews from './QuestionBankViews';
-import { createQuestionBankExport, mergeQuestionBanks, parseQuestionBankJson, replaceQuestionBank } from '../questionBank';
+import { canReplaceQuestionBank, createQuestionBankExport, ImportValidationResult, mergeQuestionBanks, parseQuestionBankJson, replaceQuestionBank } from '../questionBank';
 import { filterQuestionsForTeacher, getQuestionSubjectLabel, QUESTION_SUBJECTS } from '../questionSubjects';
 import { normalizeQuestion, validateQuestion } from '../questionValidation';
 import { removeQuestionOption } from '../questionEditing';
@@ -60,10 +60,12 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
   const [filterSubject, setFilterSubject] = useState<QuestionSubject | 'all'>('all');
   const [searchText, setSearchText] = useState('');
   const [statusText, setStatusText] = useState('');
+  const [jsonPreview, setJsonPreview] = useState<{ result: ImportValidationResult; mode: 'replace' | 'merge' } | null>(null);
   const [activeSection, setActiveSection] = useState<'questions' | 'images'>('questions');
   const [uiPreferences, setUiPreferences] = useState(() => loadTeacherEditorUiPreferences());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importModeRef = useRef<'replace' | 'merge'>('merge');
+  const importReadIdRef = useRef(0);
   const formRef = useRef<HTMLElement>(null);
 
   const filteredQuestions = useMemo(() => {
@@ -171,47 +173,50 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
   };
 
   const requestImport = (mode: 'replace' | 'merge') => {
+    importReadIdRef.current += 1;
+    setJsonPreview(null);
     importModeRef.current = mode;
     fileInputRef.current?.click();
   };
 
   const importQuestions = (file: File) => {
+    const readId = ++importReadIdRef.current;
+    const mode = importModeRef.current;
     const reader = new FileReader();
     reader.onload = () => {
+      if (readId !== importReadIdRef.current) return;
       const content = typeof reader.result === 'string' ? reader.result : '';
-      const result = parseQuestionBankJson(content);
-      const localizedImportErrors = result.errors
-        .map((error) => localizeTeacherEditorMessage(error, language))
-        .join(' ');
-      if (result.validQuestions.length === 0) {
-        setStatusText(formatTeacherText(text.importChecked, { valid: 0, invalid: result.invalidCount, details: localizedImportErrors }));
-        return;
-      }
-
-      if (importModeRef.current === 'replace') {
-        if (!window.confirm(text.confirmReplace)) return;
-        const nextQuestions = replaceQuestionBank(result.validQuestions);
-        persistQuestions(
-          nextQuestions,
-            formatTeacherText(text.importChecked, { valid: result.validQuestions.length, invalid: result.invalidCount, details: text.importReplaced })
-        );
-        startAdd();
-        return;
-      }
-
-      const mergeResult = mergeQuestionBanks(questions, result.validQuestions);
-      if (!window.confirm(text.confirmMerge)) return;
-      persistQuestions(
-        mergeResult.questions,
-        formatTeacherText(text.importChecked, {
-          valid: result.validQuestions.length,
-          invalid: result.invalidCount,
-          details: formatTeacherText(text.importMerged, { added: mergeResult.addedCount, conflicts: mergeResult.conflictCount }),
-        })
-      );
-      startAdd();
+      setJsonPreview({ result: parseQuestionBankJson(content), mode });
+      setStatusText('');
+    };
+    reader.onerror = () => {
+      if (readId !== importReadIdRef.current) return;
+      setJsonPreview(null);
+      setStatusText(text.jsonReadFailed);
     };
     reader.readAsText(file);
+  };
+
+  const applyJsonImport = () => {
+    if (!jsonPreview) return;
+    const { result, mode } = jsonPreview;
+    if (mode === 'replace' && !canReplaceQuestionBank(result)) return;
+    if (result.validQuestions.length === 0) return;
+    if (!window.confirm(mode === 'replace' ? text.confirmReplace : text.confirmMerge)) return;
+
+    const mergeResult = mergeQuestionBanks(questions, result.validQuestions);
+    persistQuestions(
+      mode === 'replace' ? replaceQuestionBank(result.validQuestions) : mergeResult.questions,
+      formatTeacherText(text.importChecked, {
+        valid: result.validQuestions.length,
+        invalid: result.invalidCount,
+        details: mode === 'replace' ? text.importReplaced : formatTeacherText(text.importMerged, {
+          added: mergeResult.addedCount, conflicts: mergeResult.conflictCount,
+        }),
+      })
+    );
+    setJsonPreview(null);
+    startAdd();
   };
 
   const resetToBuiltIns = () => {
@@ -398,6 +403,32 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
                     <button onClick={resetToBuiltIns} className="vn-button px-3 py-2 text-xs">{text.reset}</button>
                   </div>
                 </div>
+                {jsonPreview && (
+                  <section aria-label={text.jsonPreviewTitle} className="border border-stone-700 bg-stone-950/50 p-3">
+                    <h2 className="font-serif mb-2">{text.jsonPreviewTitle} - {jsonPreview.mode === 'replace' ? text.replace : text.merge}</h2>
+                    <p className="text-sm">{text.jsonTotalQuestions}: {jsonPreview.result.totalCount}</p>
+                    <p className="text-sm">{text.valid}: {jsonPreview.result.validQuestions.length}</p>
+                    <p className="text-sm">{text.invalid}: {jsonPreview.result.invalidCount}</p>
+                    <div className="max-h-44 overflow-y-auto text-sm text-red-300 my-2">
+                      {jsonPreview.result.errors.map((error) => <p key={error}>{localizeTeacherEditorMessage(error, language)}</p>)}
+                      {jsonPreview.result.questionErrors.map((problem) => (
+                        <div key={problem.questionNumber}>
+                          <p>{formatTeacherText(text.jsonQuestionNumber, { number: problem.questionNumber })}</p>
+                          {problem.messages.map((error) => <p key={error}>{localizeTeacherEditorMessage(error, language)}</p>)}
+                        </div>
+                      ))}
+                    </div>
+                    {jsonPreview.mode === 'replace' && !canReplaceQuestionBank(jsonPreview.result) && <p className="text-sm text-red-300 mb-2">{text.jsonReplaceBlocked}</p>}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={applyJsonImport}
+                        disabled={jsonPreview.mode === 'replace' ? !canReplaceQuestionBank(jsonPreview.result) : jsonPreview.result.validQuestions.length === 0}
+                        className="vn-button px-3 py-2 text-xs disabled:opacity-40"
+                      >{jsonPreview.mode === 'replace' ? text.applyReplace : text.applyMerge}</button>
+                      <button onClick={() => { setJsonPreview(null); setStatusText(text.importCancelled); }} className="vn-button px-3 py-2 text-xs">{text.cancel}</button>
+                    </div>
+                  </section>
+                )}
                 <QuestionExcelImportExport
                   questions={questions}
                   language={language}

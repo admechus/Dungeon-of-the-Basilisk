@@ -34,6 +34,7 @@ const nodes = (value: unknown): ElementNode[] => {
 };
 const textOf = (value: unknown): string => {
   if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
   if (Array.isArray(value)) return value.map(textOf).join('');
   return nodes(value).filter((node) => node.type === 'p').map((node) => textOf(node.props.children)).join(' ');
 };
@@ -134,6 +135,9 @@ describe('question persistence UI contracts (shallow handler tests)', () => {
     click(button(tree, importLabel));
     const input = find(tree, (node) => node.type === 'input' && node.props.accept === 'application/json,.json');
     (input.props.onChange as (event: unknown) => void)({ target: { files: [{}] }, currentTarget: { value: 'bank.json' } });
+    const preview = render(editor);
+    expect(session.questions).toEqual([]);
+    click(button(preview, importLabel === text.importReplace ? text.applyReplace : text.applyMerge));
     const result = render(editor);
     expect(session.questions).toEqual([question]);
     expect(session.hasUnsavedChanges).toBe(true);
@@ -212,5 +216,116 @@ describe('question persistence UI contracts (shallow handler tests)', () => {
     expect(event.returnValue).toBe('');
     cleanups.forEach((cleanup) => { if (cleanup) cleanup(); });
     expect(removeEventListener).toHaveBeenCalledWith('beforeunload', listener);
+  });
+});
+
+describe('safe JSON import preview and application', () => {
+  const incoming = { ...question, id: 'new-question', questionImageId: 'image-1', optionImageIds: ['image-2', null] };
+  const json = (questions: unknown[]) => JSON.stringify({ ...createQuestionBankExport([]), questions });
+
+  const prepare = (content: string, mode: 'replace' | 'merge' = 'replace', persist = true, confirm = true) => {
+    const confirmImport = vi.fn(() => confirm);
+    vi.stubGlobal('window', { confirm: confirmImport });
+    vi.stubGlobal('FileReader', class {
+      result = content;
+      onload: (() => void) | null = null;
+      readAsText() { this.onload?.(); }
+    });
+    let session: QuestionBankSession = { questions: [question], hasUnsavedChanges: false };
+    const onQuestionsChange = vi.fn((questions: EditableQuestion[]) => {
+      const result = persistQuestionBankChanges(questions, () => persist);
+      session = result.session;
+      return result.persisted;
+    });
+    const editor = () => TeacherQuestionEditor({
+      ...session, language: Language.EN, onClose: () => undefined, onReset: () => false, onQuestionsChange,
+    });
+    const tree = render(editor);
+    click(button(tree, mode === 'replace' ? text.importReplace : text.importMerge));
+    const input = find(tree, (node) => node.type === 'input' && node.props.accept === 'application/json,.json');
+    (input.props.onChange as (event: unknown) => void)({ target: { files: [{}] }, currentTarget: { value: 'bank.json' } });
+    return { editor, onQuestionsChange, confirmImport, session: () => session };
+  };
+
+  it('previews a valid Replace without writing, then replaces only after confirmation', () => {
+    const test = prepare(json([incoming]));
+    const preview = render(test.editor);
+    expect(textOf(preview)).toContain(`${text.jsonTotalQuestions}: 1`);
+    expect(textOf(preview)).toContain(`${text.valid}: 1`);
+    expect(textOf(preview)).toContain(`${text.invalid}: 0`);
+    expect(test.onQuestionsChange).not.toHaveBeenCalled();
+    expect(test.confirmImport).not.toHaveBeenCalled();
+    expect(button(preview, text.applyReplace).props.disabled).toBe(false);
+    click(button(preview, text.applyReplace));
+    expect(test.confirmImport).toHaveBeenCalledWith(text.confirmReplace);
+    expect(test.onQuestionsChange).toHaveBeenCalledOnce();
+    expect(test.session().questions).toEqual([incoming]);
+    expect(test.session().hasUnsavedChanges).toBe(false);
+    expect(textOf(render(test.editor))).toContain(text.importReplaced);
+  });
+
+  it('blocks partial Replace and shows counts plus every validation error', () => {
+    const test = prepare(json([incoming, { ...incoming, id: 'bad', question: '', correctIndex: 9 }]));
+    const preview = render(test.editor);
+    expect(textOf(preview)).toContain(`${text.jsonTotalQuestions}: 2`);
+    expect(textOf(preview)).toContain(`${text.valid}: 1`);
+    expect(textOf(preview)).toContain(`${text.invalid}: 1`);
+    expect(textOf(preview)).toContain('Question text is required.');
+    expect(textOf(preview)).toContain('Correct answer must point to an existing option.');
+    expect(textOf(preview)).toContain(text.jsonReplaceBlocked);
+    expect(button(preview, text.applyReplace).props.disabled).toBe(true);
+    click(button(preview, text.applyReplace));
+    expect(test.confirmImport).not.toHaveBeenCalled();
+    expect(test.onQuestionsChange).not.toHaveBeenCalled();
+    expect(test.session()).toEqual({ questions: [question], hasUnsavedChanges: false });
+  });
+
+  it.each([
+    ['all invalid', json([{ ...incoming, correctIndex: 99 }])],
+    ['empty bank', json([])],
+    ['empty file', ''],
+    ['malformed JSON', '{broken'],
+    ['wrong format', JSON.stringify({ format: 'other', version: 1, questions: [incoming] })],
+  ])('rejects %s without writing or asking to replace', (_label, content) => {
+    const test = prepare(content);
+    const preview = render(test.editor);
+    expect(button(preview, text.applyReplace).props.disabled).toBe(true);
+    click(button(preview, text.applyReplace));
+    expect(test.confirmImport).not.toHaveBeenCalled();
+    expect(test.onQuestionsChange).not.toHaveBeenCalled();
+    expect(test.session().questions).toEqual([question]);
+  });
+
+  it('leaves the bank unchanged when the user declines confirmation or cancels preview', () => {
+    const test = prepare(json([incoming]), 'replace', true, false);
+    click(button(render(test.editor), text.applyReplace));
+    expect(test.confirmImport).toHaveBeenCalledOnce();
+    expect(test.onQuestionsChange).not.toHaveBeenCalled();
+    const preview = find(render(test.editor), (node) => node.props['aria-label'] === text.jsonPreviewTitle);
+    click(button(preview, text.cancel));
+    expect(textOf(render(test.editor))).toContain(text.importCancelled);
+    expect(test.session().questions).toEqual([question]);
+  });
+
+  it('keeps partial Merge semantics, skipping invalid records and existing ID conflicts', () => {
+    const test = prepare(json([{ ...question, question: 'conflicting text' }, incoming, { ...incoming, id: 'bad', correctIndex: 99 }]), 'merge');
+    const preview = render(test.editor);
+    expect(textOf(preview)).toContain(`${text.invalid}: 1`);
+    expect(button(preview, text.applyMerge).props.disabled).toBe(false);
+    click(button(preview, text.applyMerge));
+    expect(test.confirmImport).toHaveBeenCalledWith(text.confirmMerge);
+    expect(test.session().questions).toEqual([question, incoming]);
+    expect(textOf(render(test.editor))).toContain('Merged 1; skipped 1 conflicts.');
+  });
+
+  it('keeps the intended replacement recoverable through H2 after a storage failure', () => {
+    const test = prepare(json([incoming]), 'replace', false);
+    click(button(render(test.editor), text.applyReplace));
+    expect(test.session()).toEqual({ questions: [incoming], hasUnsavedChanges: true });
+    const result = render(test.editor);
+    expect(textOf(result)).toContain(text.unsavedWarning);
+    expect(textOf(result)).not.toContain(text.importReplaced);
+    expect(button(result, text.retrySave)).toBeDefined();
+    expect(button(result, text.exportUnsavedJson)).toBeDefined();
   });
 });

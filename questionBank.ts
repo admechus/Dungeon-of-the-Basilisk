@@ -14,9 +14,11 @@ export interface QuestionBankExport {
 
 export interface ImportValidationResult {
   isValid: boolean;
+  totalCount: number;
   validQuestions: EditableQuestion[];
   invalidCount: number;
   errors: string[];
+  questionErrors: Array<{ questionNumber: number; messages: string[] }>;
 }
 
 export interface MergeResult {
@@ -64,9 +66,11 @@ export const validateQuestionBankImport = (
   if (!isRecord(value)) {
     return {
       isValid: false,
+      totalCount: 0,
       validQuestions: [],
       invalidCount: 0,
       errors: ['Import file must contain a JSON object.'],
+      questionErrors: [],
     };
   }
 
@@ -85,22 +89,26 @@ export const validateQuestionBankImport = (
   if (errors.length > 0 || !Array.isArray(value.questions)) {
     return {
       isValid: false,
+      totalCount: Array.isArray(value.questions) ? value.questions.length : 0,
       validQuestions: [],
       invalidCount: Array.isArray(value.questions) ? value.questions.length : 0,
       errors,
+      questionErrors: [],
     };
   }
 
   const seenIds = new Set<string>();
   const validQuestions: EditableQuestion[] = [];
   let invalidCount = 0;
+  const questionErrors: ImportValidationResult['questionErrors'] = [];
 
-  value.questions.forEach((rawQuestion) => {
+  value.questions.forEach((rawQuestion, index) => {
     const parsedQuestion = parseEditableQuestion(rawQuestion, {
       allowLegacySubject: options.allowLegacySubject,
     });
     if (!parsedQuestion) {
       invalidCount += 1;
+      questionErrors.push({ questionNumber: index + 1, messages: ['Question fields are invalid.'] });
       return;
     }
 
@@ -108,6 +116,10 @@ export const validateQuestionBankImport = (
     const result = validateQuestion(normalizedQuestion);
     if (!result.isValid || seenIds.has(normalizedQuestion.id)) {
       invalidCount += 1;
+      questionErrors.push({
+        questionNumber: index + 1,
+        messages: [...result.errors, ...(seenIds.has(normalizedQuestion.id) ? ['Question id must be unique.'] : [])],
+      });
       return;
     }
 
@@ -117,9 +129,11 @@ export const validateQuestionBankImport = (
 
   return {
     isValid: validQuestions.length > 0 && invalidCount === 0,
+    totalCount: value.questions.length,
     validQuestions,
     invalidCount,
     errors,
+    questionErrors,
   };
 };
 
@@ -132,12 +146,18 @@ export const parseQuestionBankJson = (
   } catch {
     return {
       isValid: false,
+      totalCount: 0,
       validQuestions: [],
       invalidCount: 0,
       errors: ['Import file is not valid JSON.'],
+      questionErrors: [],
     };
   }
 };
+
+export const canReplaceQuestionBank = (result: ImportValidationResult): boolean =>
+  result.isValid && result.errors.length === 0 && result.invalidCount === 0 &&
+  result.validQuestions.length > 0 && result.totalCount === result.validQuestions.length;
 
 export const replaceQuestionBank = (incomingQuestions: EditableQuestion[]): EditableQuestion[] =>
   incomingQuestions.map(normalizeQuestion);
