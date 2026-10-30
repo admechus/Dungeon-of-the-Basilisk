@@ -55,24 +55,50 @@ export const loadQuestionBank = (storage: QuestionStorage | undefined = globalTh
 
 export const saveQuestionBank = (
   questions: EditableQuestion[],
-  storage: QuestionStorage | undefined = globalThis.localStorage
+  storage?: QuestionStorage
 ): boolean => {
-  if (!storage) return false;
-
   try {
-    storage.setItem(QUESTION_BANK_STORAGE_KEY, JSON.stringify({ questions }));
+    const target = storage ?? globalThis.localStorage;
+    if (!target) return false;
+    target.setItem(QUESTION_BANK_STORAGE_KEY, JSON.stringify({ questions }));
     return true;
   } catch {
     return false;
   }
 };
 
+export interface QuestionBankSession {
+  questions: EditableQuestion[];
+  hasUnsavedChanges: boolean;
+}
+
+export interface QuestionBankWriteResult {
+  session: QuestionBankSession;
+  persisted: boolean;
+}
+
+export type QuestionBankWriter = (questions: EditableQuestion[]) => boolean;
+
+export const persistQuestionBankChanges = (
+  questions: EditableQuestion[],
+  write: QuestionBankWriter = saveQuestionBank
+): QuestionBankWriteResult => {
+  let persisted = false;
+  try {
+    persisted = write(questions) === true;
+  } catch {
+    // A failed write must leave the intended bank available for recovery.
+  }
+  return { session: { questions, hasUnsavedChanges: !persisted }, persisted };
+};
+
 export const resetQuestionBank = (
-  storage: QuestionStorage | undefined = globalThis.localStorage
-): EditableQuestion[] => {
-  const builtInQuestions = createBuiltInQuestionBank();
-  saveQuestionBank(builtInQuestions, storage);
-  return builtInQuestions;
+  currentSession: QuestionBankSession,
+  write: QuestionBankWriter = saveQuestionBank
+): QuestionBankWriteResult => {
+  const result = persistQuestionBankChanges(createBuiltInQuestionBank(), write);
+  // Reset is atomic: do not replace recoverable work when defaults cannot be stored.
+  return result.persisted ? result : { session: currentSession, persisted: false };
 };
 
 const parseStoredQuestionBank = (storedValue: string): EditableQuestion[] | null => {

@@ -9,7 +9,7 @@ import ImageAssetPreview from './components/ImageAssetPreview';
 import TeacherQuestionEditor from './components/TeacherQuestionEditor';
 import { generateGameEvent } from './services/gameEventService';
 import { pickQuestionFromBank } from './questionBank';
-import { loadQuestionBank } from './questionStorage';
+import { loadQuestionBank, persistQuestionBankChanges, QuestionBankSession, resetQuestionBank } from './questionStorage';
 import {
   createBaseGameState,
   createInitialBoardState,
@@ -62,12 +62,26 @@ const App: React.FC = () => {
   const [setupCount, setSetupCount] = useState<number>(2);
   const [showAssetsConfig, setShowAssetsConfig] = useState<boolean>(false);
   const [showQuestionEditor, setShowQuestionEditor] = useState<boolean>(false);
-  const [questionBank, setQuestionBank] = useState<EditableQuestion[]>(() => loadQuestionBank().questions);
+  const [questionBankSession, setQuestionBankSession] = useState<QuestionBankSession>(() => ({
+    questions: loadQuestionBank().questions,
+    hasUnsavedChanges: false,
+  }));
+  const questionBank = questionBankSession.questions;
   const [isRollingDice, setIsRollingDice] = useState<boolean>(false);
   const rollInProgressRef = useRef<boolean>(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   // --- Effects ---
+
+  useEffect(() => {
+    if (!questionBankSession.hasUnsavedChanges) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [questionBankSession.hasUnsavedChanges]);
   
   // Auto-scroll logs
   useEffect(() => {
@@ -509,8 +523,18 @@ const App: React.FC = () => {
     return (
       <TeacherQuestionEditor
         questions={questionBank}
+        hasUnsavedChanges={questionBankSession.hasUnsavedChanges}
         language={gameState.language}
-        onQuestionsChange={setQuestionBank}
+        onQuestionsChange={(questions: EditableQuestion[]) => {
+          const result = persistQuestionBankChanges(questions);
+          setQuestionBankSession(result.session);
+          return result.persisted;
+        }}
+        onReset={() => {
+          const result = resetQuestionBank(questionBankSession);
+          setQuestionBankSession(result.session);
+          return result.persisted;
+        }}
         onClose={() => setShowQuestionEditor(false)}
       />
     );

@@ -14,7 +14,7 @@ interface QuestionExcelImportExportProps {
   questions: EditableQuestion[];
   language: Language;
   text: TeacherEditorText;
-  onApply: (questions: EditableQuestion[], message: string) => void;
+  onApply: (questions: EditableQuestion[], message: string) => boolean;
 }
 
 const EXCEL_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -109,9 +109,9 @@ const QuestionExcelImportExport: React.FC<QuestionExcelImportExportProps> = ({
       return;
     }
 
-    onApply(replaceQuestionBank(preview.validQuestions), text.excelImportApplied);
+    const persisted = onApply(replaceQuestionBank(preview.validQuestions), text.excelImportApplied);
     setPreview(null);
-    setStatusText(text.excelImportApplied);
+    setStatusText(persisted ? text.excelImportApplied : '');
   };
 
   const applyMerge = () => {
@@ -121,12 +121,12 @@ const QuestionExcelImportExport: React.FC<QuestionExcelImportExportProps> = ({
     }
 
     const mergeResult = mergeQuestionBanks(questions, preview.validQuestions);
-    onApply(
+    const persisted = onApply(
       mergeResult.questions,
       formatTeacherText(text.importMerged, { added: mergeResult.addedCount, conflicts: mergeResult.conflictCount })
     );
     setPreview(null);
-    setStatusText(text.excelImportApplied);
+    setStatusText(persisted ? text.excelImportApplied : '');
   };
 
   return (
