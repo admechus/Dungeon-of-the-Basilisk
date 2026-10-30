@@ -6,6 +6,7 @@ import QuestionBankViews from './QuestionBankViews';
 import { createQuestionBankExport, mergeQuestionBanks, parseQuestionBankJson, replaceQuestionBank } from '../questionBank';
 import { filterQuestionsForTeacher, getQuestionSubjectLabel, QUESTION_SUBJECTS } from '../questionSubjects';
 import { normalizeQuestion, validateQuestion } from '../questionValidation';
+import { removeQuestionOption } from '../questionEditing';
 import { resetQuestionBank, saveQuestionBank } from '../questionStorage';
 import { EditableQuestion, Language, QuestionDifficulty, QuestionSubject } from '../types';
 import {
@@ -241,17 +242,7 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
   };
 
   const removeOption = (index: number) => {
-    setDraft((current) => {
-      const nextOptions = current.options.filter((_, optionIndex) => optionIndex !== index);
-      const nextOptionImageIds = current.optionImageIds?.filter((_, optionIndex) => optionIndex !== index);
-      const nextCorrectIndex = Math.min(current.correctIndex, Math.max(0, nextOptions.length - 1));
-      return {
-        ...current,
-        options: nextOptions,
-        optionImageIds: nextOptionImageIds,
-        correctIndex: nextCorrectIndex,
-      };
-    });
+    setDraft((current) => removeQuestionOption(current, index));
   };
 
   const updateDifficulty = (value: string) => {
