@@ -7,7 +7,6 @@ import { createQuestionBankExport, mergeQuestionBanks, parseQuestionBankJson, re
 import { filterQuestionsForTeacher, getQuestionSubjectLabel, QUESTION_SUBJECTS } from '../questionSubjects';
 import { normalizeQuestion, validateQuestion } from '../questionValidation';
 import { removeQuestionOption } from '../questionEditing';
-import { resetQuestionBank, saveQuestionBank } from '../questionStorage';
 import { EditableQuestion, Language, QuestionDifficulty, QuestionSubject } from '../types';
 import {
   formatTeacherText,
@@ -23,8 +22,10 @@ import {
 
 interface TeacherQuestionEditorProps {
   questions: EditableQuestion[];
+  hasUnsavedChanges: boolean;
   language: Language;
-  onQuestionsChange: (questions: EditableQuestion[]) => void;
+  onQuestionsChange: (questions: EditableQuestion[]) => boolean;
+  onReset: () => boolean;
   onClose: () => void;
 }
 
@@ -45,8 +46,10 @@ const createDuplicateQuestion = (question: EditableQuestion): EditableQuestion =
 
 const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
   questions,
+  hasUnsavedChanges,
   language,
   onQuestionsChange,
+  onReset,
   onClose,
 }) => {
   const text = getTeacherEditorText(language);
@@ -93,9 +96,9 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
   };
 
   const persistQuestions = (nextQuestions: EditableQuestion[], message: string) => {
-    onQuestionsChange(nextQuestions);
-    saveQuestionBank(nextQuestions);
-    setStatusText(message);
+    const persisted = onQuestionsChange(nextQuestions);
+    setStatusText(persisted ? message : text.unsavedWarning);
+    return persisted;
   };
 
   const startAdd = () => {
@@ -164,7 +167,7 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
     link.download = `dungeon-of-the-basilisk-questions-${date}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    setStatusText(text.exported);
+    setStatusText(hasUnsavedChanges ? text.recoveryExported : text.exported);
   };
 
   const requestImport = (mode: 'replace' | 'merge') => {
@@ -212,9 +215,12 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
   };
 
   const resetToBuiltIns = () => {
+    if (hasUnsavedChanges && !window.confirm(text.confirmResetUnsaved)) return;
     if (!window.confirm(text.confirmReset)) return;
-    const builtInQuestions = resetQuestionBank();
-    onQuestionsChange(builtInQuestions);
+    if (!onReset()) {
+      setStatusText(text.resetFailed);
+      return;
+    }
     setDraft(createBlankQuestion(language));
     setEditingId(null);
     setStatusText(text.restored);
@@ -259,6 +265,16 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
           <h1 className="text-3xl dungeon-font text-amber-500">{text.title}</h1>
           <button onClick={onClose} className="vn-button px-4 py-2">{text.back}</button>
         </div>
+
+        {hasUnsavedChanges && (
+          <div role="alert" className="border border-red-800 bg-red-950/30 p-3 mb-4">
+            <p className="text-sm text-red-200 mb-2">{text.unsavedWarning}</p>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => persistQuestions(questions, text.saved)} className="vn-button px-3 py-2">{text.retrySave}</button>
+              <button onClick={exportQuestions} className="vn-button px-3 py-2">{text.exportUnsavedJson}</button>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2 mb-4">
           <button
@@ -387,8 +403,9 @@ const TeacherQuestionEditor: React.FC<TeacherQuestionEditorProps> = ({
                   language={language}
                   text={text}
                   onApply={(nextQuestions, message) => {
-                    persistQuestions(nextQuestions, message);
+                    const persisted = persistQuestions(nextQuestions, message);
                     startAdd();
+                    return persisted;
                   }}
                 />
                 <input

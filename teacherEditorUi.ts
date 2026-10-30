@@ -114,6 +114,12 @@ export interface TeacherEditorText {
   edit: string;
   delete: string;
   save: string;
+  unsavedWarning: string;
+  retrySave: string;
+  exportUnsavedJson: string;
+  recoveryExported: string;
+  resetFailed: string;
+  confirmResetUnsaved: string;
   cancel: string;
   exportJson: string;
   importReplace: string;
@@ -232,6 +238,12 @@ const EN: TeacherEditorText = {
   edit: 'Edit',
   delete: 'Delete',
   save: 'Save changes',
+  unsavedWarning: 'Changes are only in memory, not saved to browser storage. Retry saving or export JSON before reloading or closing this tab.',
+  retrySave: 'Retry saving',
+  exportUnsavedJson: 'Export unsaved bank as JSON',
+  recoveryExported: 'Recovery JSON download requested. Browser storage is still unsaved.',
+  resetFailed: 'Reset could not be saved. The current question bank has been kept unchanged.',
+  confirmResetUnsaved: 'Discard the current unsaved bank if resetting succeeds? Cancel to retry saving or export it first.',
   cancel: 'Cancel',
   exportJson: 'Export JSON',
   importReplace: 'Import replace',
@@ -353,6 +365,12 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     edit: 'Edytuj',
     delete: 'Usuń',
     save: 'Zapisz zmiany',
+    unsavedWarning: 'Zmiany są tylko w pamięci, nie zostały zapisane w przeglądarce. Ponów zapis lub wyeksportuj JSON przed odświeżeniem albo zamknięciem karty.',
+    retrySave: 'Ponów zapis',
+    exportUnsavedJson: 'Eksportuj niezapisany bank jako JSON',
+    recoveryExported: 'Rozpoczęto pobieranie ratunkowego JSON. Bank nadal nie jest zapisany w przeglądarce.',
+    resetFailed: 'Nie udało się zapisać przywrócenia. Bieżący bank pytań pozostał bez zmian.',
+    confirmResetUnsaved: 'Odrzucić niezapisany bank, jeśli przywrócenie się powiedzie? Anuluj, aby najpierw ponowić zapis lub wyeksportować bank.',
     cancel: 'Anuluj',
     exportJson: 'Eksport JSON',
     importReplace: 'Import zastąp',
@@ -416,6 +434,12 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     back: 'Назад до гри',
     add: 'Додати питання',
     save: 'Зберегти зміни',
+    unsavedWarning: 'Зміни лише в пам’яті, їх не збережено у сховищі браузера. Повторіть збереження або експортуйте JSON перед перезавантаженням чи закриттям вкладки.',
+    retrySave: 'Повторити збереження',
+    exportUnsavedJson: 'Експортувати незбережений банк у JSON',
+    recoveryExported: 'Запитано завантаження JSON для відновлення. Банк досі не збережено у браузері.',
+    resetFailed: 'Не вдалося зберегти скидання. Поточний банк питань залишено без змін.',
+    confirmResetUnsaved: 'Відкинути незбережений банк, якщо скидання буде успішним? Скасуйте, щоб спочатку повторити збереження або експортувати банк.',
     cancel: 'Скасувати',
     delete: 'Видалити',
     duplicate: 'Дублювати',
@@ -477,6 +501,12 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     back: 'Назад к игре',
     add: 'Добавить вопрос',
     save: 'Сохранить изменения',
+    unsavedWarning: 'Изменения только в памяти, они не сохранены в хранилище браузера. Повторите сохранение или экспортируйте JSON перед перезагрузкой или закрытием вкладки.',
+    retrySave: 'Повторить сохранение',
+    exportUnsavedJson: 'Экспортировать несохранённый банк в JSON',
+    recoveryExported: 'Запрошено скачивание JSON для восстановления. Банк по-прежнему не сохранён в браузере.',
+    resetFailed: 'Не удалось сохранить сброс. Текущий банк вопросов оставлен без изменений.',
+    confirmResetUnsaved: 'Отбросить несохранённый банк, если сброс завершится успешно? Отмените, чтобы сначала повторить сохранение или экспортировать банк.',
     cancel: 'Отмена',
     delete: 'Удалить',
     duplicate: 'Дублировать',
@@ -538,6 +568,12 @@ export const TEACHER_EDITOR_TEXT: Record<Language, TeacherEditorText> = {
     back: 'ゲームに戻る',
     add: '質問を追加',
     save: '変更を保存',
+    unsavedWarning: '変更はメモリ内のみにあり、ブラウザーのストレージには保存されていません。再読み込みやタブを閉じる前に、保存を再試行するかJSONをエクスポートしてください。',
+    retrySave: '保存を再試行',
+    exportUnsavedJson: '未保存の質問バンクをJSONでエクスポート',
+    recoveryExported: '復元用JSONのダウンロードを要求しました。ブラウザーにはまだ保存されていません。',
+    resetFailed: 'リセットを保存できませんでした。現在の質問バンクは変更されていません。',
+    confirmResetUnsaved: 'リセットが成功した場合、未保存の質問バンクを破棄しますか？先に保存を再試行するかエクスポートするには、キャンセルしてください。',
     cancel: 'キャンセル',
     delete: '削除',
     duplicate: '複製',
